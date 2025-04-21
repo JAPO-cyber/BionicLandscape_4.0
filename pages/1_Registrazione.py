@@ -99,6 +99,9 @@ if submitted:
         try:
             sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
             sheet.append_row(list(dati_utente.values()))
+            # ✅ Salva in sessione per le pagine successive
+            st.session_state["tavola_rotonda"] = tavola_rotonda
+    
             st.success("✅ Dati salvati con successo!")
             st.switch_page("pages/2_Persona_Model.py")
 
