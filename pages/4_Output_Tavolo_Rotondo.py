@@ -62,8 +62,13 @@ k = st.slider("Scegli il numero di cluster:", 2, 6, 3)
 kmeans = KMeans(n_clusters=k, random_state=42).fit(X)
 df_merged["Cluster"] = kmeans.labels_
 
-fig2 = px.scatter(df_merged, x=elementi_verde[0], y=elementi_verde[1], color="Cluster",
-                  hover_data=["Utente", tavola_column, "Età", "Ruolo", "Ambito"])
+fig2 = px.scatter(
+    df_merged.dropna(subset=[elementi_verde[0], elementi_verde[1]]),
+    x=elementi_verde[0],
+    y=elementi_verde[1],
+    color="Cluster",
+    hover_data=["Utente", tavola_column, "Età", "Ruolo", "Ambito"]
+)
 st.plotly_chart(fig2, use_container_width=True)
 
 # ✅ Media dei pesi per cluster
