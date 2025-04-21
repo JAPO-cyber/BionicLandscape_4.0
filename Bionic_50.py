@@ -1,13 +1,13 @@
 import streamlit as st
-import os
-from utils.auth import check_login
+import base64
+from utils.auth import check_login  # Assicurati che esista il file utils/auth.py
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# Sfondo personalizzato via CSS
+# Funzione per impostare lo sfondo
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
-        bg_image = img_file.read().encode("base64").decode()
+        bg_image = base64.b64encode(img_file.read()).decode()
     st.markdown(
         f"""
         <style>
@@ -22,13 +22,14 @@ def set_background(image_path):
         unsafe_allow_html=True
     )
 
-# Setta lo sfondo
-set_background("assets/bg.jpg")
+# Imposta lo sfondo
+set_background("assets/bg.jpg")  # Assicurati che il file esista
 
-# Sezione login
+# Stato di login
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+# Form di login
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Login")
     username = st.text_input("Username")
@@ -40,4 +41,4 @@ if not st.session_state.logged_in:
         else:
             st.error("Credenziali non valide")
 else:
-    st.switch_page("pages/1_Home.py")  # Reindirizza alla pagina home
+    st.switch_page("pages/1_Home.py")  # Reindirizza alla pagina Home se già loggato
