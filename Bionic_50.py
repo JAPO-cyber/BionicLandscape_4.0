@@ -1,21 +1,20 @@
 import streamlit as st
 import base64
-from utils.auth import check_login
+from utils.auth import check_login  # check_login restituisce (success, role)
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# Nascondi il menu laterale e footer Streamlit
+# 🔒 Nascondi menu laterale e header
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    .css-18e3th9 {padding-top: 1rem;}
-    .css-1d391kg {display: none;}  /* Nasconde hamburger menu */
+    .css-1d391kg {display: none;}  /* hamburger */
     </style>
 """, unsafe_allow_html=True)
 
-# Funzione per impostare lo sfondo
+# 🌄 Funzione per impostare lo sfondo
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
         bg_image = base64.b64encode(img_file.read()).decode()
@@ -36,13 +35,13 @@ def set_background(image_path):
 # Imposta lo sfondo
 set_background("assets/bg.jpg")
 
-# Stato sessione
+# 🔁 Stato sessione
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "role" not in st.session_state:
     st.session_state.role = None
 
-# Form login
+# 🔐 Form login
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Login")
     username = st.text_input("Username")
@@ -54,14 +53,14 @@ if not st.session_state.logged_in:
             st.session_state.logged_in = True
             st.session_state.role = role
         else:
-            st.error("Credenziali non valide")
+            st.error("❌ Credenziali non valide")
 
-# Se loggato
+# ✅ Dopo login
 if st.session_state.logged_in:
     ruolo = st.session_state.role
     st.success(f"✅ Login effettuato come **{ruolo}**")
 
-    # Link comuni
+    # Pagina sempre disponibile
     st.page_link("pages/1_Home.py", label="🏠 Home")
 
     # Accesso differenziato
