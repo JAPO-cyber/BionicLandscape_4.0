@@ -23,7 +23,7 @@ df_valutazioni = pd.DataFrame(
 ).T
 
 # Calcolo statistiche
-st.subheader("\U0001F4CA Statistiche delle valutazioni")
+st.subheader("📊 Statistiche delle valutazioni")
 st.markdown("Media e variabilità delle valutazioni fornite per ciascun parco.")
 
 media_df = df_valutazioni.mean(axis=1).rename("Media")
@@ -36,13 +36,19 @@ fig = px.bar(statistiche, x=statistiche.index, y="Media", error_y="Deviazione St
              title="Valutazione media dei parchi con deviazione standard")
 st.plotly_chart(fig, use_container_width=True)
 
-# Recupera i pesi AHP dell'utente se disponibili
+# Simula pesi AHP se non disponibili
 if "ahp_weights" not in st.session_state:
-    st.warning("Non sono stati trovati i pesi AHP individuali. Torna alla pagina della matrice AHP per completarli.")
-    st.stop()
+    st.warning("Non sono stati trovati i pesi AHP individuali. Verranno usati pesi simulati per il test.")
+    st.session_state["ahp_weights"] = {
+        "Accessibilità del verde": 0.2,
+        "Biodiversità": 0.25,
+        "Manutenzione e pulizia": 0.15,
+        "Funzione sociale": 0.2,
+        "Funzione ambientale": 0.2
+    }
 
 # Calcolo punteggio AHP aggregato
-st.subheader("\U0001F4DD Valutazione Cittadino")
+st.subheader("📝 Valutazione Cittadino")
 
 ahp_pesi = st.session_state["ahp_weights"]
 vet_pesi = np.array([ahp_pesi[c] for c in criteri])
@@ -56,14 +62,14 @@ df_finale = pd.DataFrame({
 st.dataframe(df_finale.sort_values("Punteggio Valutazione Cittadino", ascending=False))
 
 # Commenti
-st.subheader("\U0001F4AC Commenti lasciati dagli utenti")
+st.subheader("💬 Commenti lasciati dagli utenti")
 for parco, valutazione in valutazioni_dict.items():
     commento = valutazione.get("feedback", "")
     if commento:
         st.markdown(f"**{parco}**: {commento}")
 
 # Mappa con colori secondo punteggio
-st.subheader("\U0001F5FA Mappa dei parchi colorata per punteggio")
+st.subheader("🗺 Mappa dei parchi colorata per punteggio")
 parchi_coord = {
     "Parco Suardi": (45.7035, 9.6783),
     "Parco della Trucca": (45.6847, 9.6240),
@@ -116,3 +122,11 @@ st.pydeck_chart(pdk.Deck(
     ],
     tooltip={"text": "{nome}\nPunteggio: {punteggio:.2f}"}
 ))
+
+# Legenda dei colori
+st.markdown("""
+### 🟢 Legenda colori punteggio
+- 🔴 **Rosso**: Punteggio ≤ 5
+- 🟡 **Giallo**: Punteggio tra 5 e 9
+- 🟢 **Verde**: Punteggio > 9
+""")
