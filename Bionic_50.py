@@ -4,13 +4,13 @@ from utils.auth import check_login  # check_login restituisce (success, role)
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 🔒 Nascondi menu laterale e header
+# 🔒 Nascondi menu laterale e footer (compatibile con nuove versioni)
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    .css-1d391kg {display: none;}  /* hamburger */
+    [data-testid="collapsedControl"] {display: none;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -44,8 +44,8 @@ if "role" not in st.session_state:
 # 🔐 Form login
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    username = st.text_input("Username").strip()
+    password = st.text_input("Password", type="password").strip()
 
     if st.button("Login"):
         success, role = check_login(username, password)
