@@ -58,7 +58,7 @@ menu = [
     "Radar PersonaModel", "Ambito vs Visione", "Statistica descrittiva",
     "Test ANOVA e Normalità", "PCA 2D", "Silhouette Score"
 ]
-scelta = st.sidebar.radio("🔍 Seleziona l'analisi da visualizzare", menu)
+scelta = st.sidebar.radio("📌 Seleziona Analisi", menu)
 
 # [segue codice delle analisi, invariato rispetto alla versione precedente...]
 
