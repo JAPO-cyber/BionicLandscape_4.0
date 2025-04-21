@@ -2,8 +2,8 @@
 
 def check_login(username, password):
     users = {
-        "admin": ("password1", "bionic"),
-        "cittadino": ("password2", "responsabile")
+        "admin": ("bionic", "bionic"),
+        "cittadino": ("responsabile", "responsabile")
     }
 
     if username in users:
