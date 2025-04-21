@@ -42,7 +42,8 @@ elementi_verde = [
 
 # ✅ Statistica descrittiva per Tavola rotonda
 st.subheader("📊 Confronto tra Tavole rotonde")
-mean_by_round = df_merged.groupby("Tavola rotonda")[elementi_verde].mean()
+tavola_column = [col for col in df_merged.columns if "Tavola rotonda" in col][0]
+mean_by_round = df_merged.groupby(tavola_column)[elementi_verde].mean()
 st.dataframe(mean_by_round)
 fig1 = px.bar(mean_by_round.T, barmode="group", title="Pesi AHP medi per Tavola rotonda")
 st.plotly_chart(fig1, use_container_width=True)
@@ -50,7 +51,7 @@ st.plotly_chart(fig1, use_container_width=True)
 # ✅ ANOVA per ogni elemento del verde tra tavole rotonde
 st.subheader("📐 Test ANOVA tra Tavole rotonde")
 for elemento in elementi_verde:
-    gruppi = [group[elemento].values for name, group in df_merged.groupby("Tavola rotonda")]
+    gruppi = [group[elemento].values for name, group in df_merged.groupby(tavola_column)]
     stat, p = f_oneway(*gruppi)
     st.write(f"🔸 {elemento}: p-value = {p:.4f} ({'⚠️ Differenze significative' if p < 0.05 else 'Nessuna differenza significativa'})")
 
@@ -62,7 +63,7 @@ kmeans = KMeans(n_clusters=k, random_state=42).fit(X)
 df_merged["Cluster"] = kmeans.labels_
 
 fig2 = px.scatter(df_merged, x=elementi_verde[0], y=elementi_verde[1], color="Cluster",
-                  hover_data=["Utente", "Tavola rotonda", "Età", "Ruolo", "Ambito"])
+                  hover_data=["Utente", tavola_column, "Età", "Ruolo", "Ambito"])
 st.plotly_chart(fig2, use_container_width=True)
 
 # ✅ Media dei pesi per cluster
@@ -74,7 +75,7 @@ st.plotly_chart(fig3, use_container_width=True)
 
 # ✅ Confronto Cluster vs Tavola rotonda
 st.subheader("📊 Cluster per Tavola rotonda")
-cross_tab = pd.crosstab(df_merged["Tavola rotonda"], df_merged["Cluster"])
+cross_tab = pd.crosstab(df_merged[tavola_column], df_merged["Cluster"])
 st.dataframe(cross_tab)
 fig4 = px.bar(cross_tab, barmode="group", title="Distribuzione dei Cluster per Tavola rotonda")
 st.plotly_chart(fig4, use_container_width=True)
