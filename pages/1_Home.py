@@ -1,6 +1,6 @@
 import streamlit as st
 
-# Funzione per salvataggio su Google Sheets (pronta da usare)
+# ✅ Funzione per salvataggio su Google Sheets
 def salva_su_google_sheet(dati_dict):
     try:
         import pandas as pd
@@ -14,16 +14,16 @@ def salva_su_google_sheet(dati_dict):
         st.warning("⚠️ Errore durante il salvataggio su Google Sheets.")
         st.text(f"Dettaglio: {e}")
 
-
+# ✅ Blocca accesso se non loggato
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
-    st.error("Accesso negato. Torna alla pagina principale.")
+    st.error("❌ Accesso negato. Torna alla pagina principale.")
     st.stop()
 
+# ✅ Contenuto della pagina
 st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
 st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
 with st.form("user_info_form"):
-
     tavola_rotonda = st.selectbox(
         "🔘 Tavola rotonda",
         [
@@ -34,7 +34,6 @@ with st.form("user_info_form"):
             "Cultura e creatività",
         ]
     )
-    
     nome = st.text_input("👤 Nome")
     eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
     professione = st.text_input("💼 Professione")
@@ -92,6 +91,7 @@ with st.form("user_info_form"):
 
     submitted = st.form_submit_button("Invia")
 
+# ✅ Dopo l'invio
 if submitted:
     dati_utente = {
         "Tavola rotonda": tavola_rotonda,
@@ -111,8 +111,7 @@ if submitted:
         "Canale preferito": canale
     }
 
-    # 🔐 Salvataggio su Google Sheet - attiva quando sei pronto
-    # salva_su_google_sheet(dati_utente)
+    # salva_su_google_sheet(dati_utente)  # Attiva quando pronto
 
     st.success("✅ Grazie per aver inviato le tue informazioni!")
 
@@ -120,3 +119,6 @@ if submitted:
     for chiave, valore in dati_utente.items():
         st.write(f"**{chiave}**: {valore}")
 
+    # ✅ Link alla prossima pagina
+    st.markdown("---")
+    st.page_link("pages/2_Persona_Model.py", label="➡️ Vai a Persona Model", icon="👤")
