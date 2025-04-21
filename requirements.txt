@@ -8,3 +8,4 @@ seaborn
 xlsxwriter
 python-docx
 kaleido
+streamlit-extras
