@@ -6,6 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+import re
 
 # Caricamento dati simulati
 np.random.seed(42)
@@ -40,14 +41,14 @@ df = pd.DataFrame({
     "Canale preferito": np.random.choice(canali, size=n)
 })
 
-st.set_page_config(page_title="\ud83d\udcca Personas Model Analysis", layout="wide")
-st.title("\ud83d\udcca Analisi partecipanti - Personas Model")
+st.set_page_config(page_title="📊 Personas Model Analysis", layout="wide")
+st.title("📊 Analisi partecipanti - Personas Model")
 
 tabs = st.tabs([
-    "1\ufe0f\u20e3 Dataset", "2\ufe0f\u20e3 Età e Coinvolgimento", "3\ufe0f\u20e3 Conoscenza tema", "4\ufe0f\u20e3 Visione e Valori",
-    "5\ufe0f\u20e3 Ambiti di Interesse", "6\ufe0f\u20e3 Esperienza Precedente", "7\ufe0f\u20e3 Canali Preferiti", "8\ufe0f\u20e3 Ruoli",
-    "9\ufe0f\u20e3 Formazione", "\ud83d\udd1f Correlazioni", "\ud83d\udccf Boxplot", "\ud83e\uddf9 K-Means Clustering",
-    "\ud83d\udcc8 Pareto Valori", "\ud83c\udf1f Clusterizzazione semplificata", "\ud83d\udcc5 Esporta CSV"
+    "1️⃣ Dataset", "2️⃣ Età e Coinvolgimento", "3️⃣ Conoscenza tema", "4️⃣ Visione e Valori",
+    "5️⃣ Ambiti di Interesse", "6️⃣ Esperienza Precedente", "7️⃣ Canali Preferiti", "8️⃣ Ruoli",
+    "9️⃣ Formazione", "🔟 Correlazioni", "🔢 Boxplot", "🧩 K-Means Clustering",
+    "📈 Pareto Valori", "🎯 Clusterizzazione semplificata", "📥 Esporta CSV"
 ])
 
 with tabs[0]:
@@ -125,23 +126,27 @@ with tabs[12]:
 with tabs[13]:
     st.subheader("Clusterizzazione semplificata (logica)")
 
+    def remove_emoji(text):
+        return re.sub(r'[^\w\s,.-]', '', text)
+
     def assegna_persona(row):
         if row["Età"] < 30 and row["Coinvolgimento"] >= 7:
-            return "\ud83e\uddd1\u200d\ud83c\udf93 Giovane attivista"
+            return "Giovane attivista"
         elif row["Ruolo"] == "Tecnico/Esperto" and row["Conoscenza tema"] >= 7:
-            return "\ud83e\uddd1\u200d\ud83d\udd2c Esperto tecnico"
+            return "Esperto tecnico"
         elif row["Esperienza"] == "No" and row["Coinvolgimento"] < 4:
-            return "\ud83d\udc64 Cittadino curioso"
+            return "Cittadino curioso"
         elif row["Ruolo"] == "Rappresentante istituzionale":
-            return "\ud83c\udfe9 Rappresentante"
+            return "Rappresentante"
         else:
-            return "\ud83c\udf0d Partecipante coinvolto"
+            return "Partecipante coinvolto"
 
     df["PersonaModel"] = df.apply(assegna_persona, axis=1)
+    df["PersonaModel"] = df["PersonaModel"].apply(remove_emoji)
     st.dataframe(df[["Nome", "PersonaModel"]])
     st.bar_chart(df["PersonaModel"].value_counts())
 
 with tabs[14]:
     st.subheader("Scarica i dati in CSV")
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("\ud83d\udcc5 Scarica CSV", csv, "analisi_personas.csv", "text/csv")
+    csv = df.to_csv(index=False).encode("utf-8-sig")
+    st.download_button("📥 Scarica CSV", csv, "analisi_personas.csv", "text/csv")
