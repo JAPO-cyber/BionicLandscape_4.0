@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-from utils.auth import check_login  # Assicurati che esista il file utils/auth.py
+from utils.auth import check_login  # Funzione personalizzata
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
@@ -23,7 +23,7 @@ def set_background(image_path):
     )
 
 # Imposta lo sfondo
-set_background("assets/bg.jpg")  # Assicurati che il file esista
+set_background("assets/bg.jpg")
 
 # Stato di login
 if "logged_in" not in st.session_state:
@@ -34,11 +34,14 @@ if not st.session_state.logged_in:
     st.markdown("## 🔐 Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
+    
     if st.button("Login"):
         if check_login(username, password):
             st.session_state.logged_in = True
-            st.experimental_rerun()
         else:
             st.error("Credenziali non valide")
-else:
-    st.switch_page("pages/1_Home.py")  # Reindirizza alla pagina Home se già loggato
+
+# Se loggato, mostra accesso alla Home
+if st.session_state.logged_in:
+    st.success("Login effettuato con successo!")
+    st.page_link("pages/1_Home.py", label="➡️ Vai alla Home", icon="🏠")
