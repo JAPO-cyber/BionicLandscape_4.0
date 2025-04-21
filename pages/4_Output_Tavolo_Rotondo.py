@@ -7,10 +7,10 @@ from scipy.stats import f_oneway
 from lib.google_sheet import get_sheet_by_name
 from lib.style import apply_custom_style
 
-st.set_page_config(page_title="🔍 AHP Tavolo Rotondo", layout="wide")
+st.set_page_config(page_title="🔍 Matrice dei Pesi", layout="wide")
 apply_custom_style()
 
-st.title("4. Matrice AHP del Tavolo Rotondo")
+st.title("4. Matrice dei Pesi")
 
 # ✅ Carica i dati da Google Sheets
 sheet_weights = get_sheet_by_name("Dati_Partecipante", "Pesi Parametri")
