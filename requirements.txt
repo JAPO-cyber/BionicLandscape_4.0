@@ -8,4 +8,3 @@ seaborn
 xlsxwriter
 python-docx
 kaleido
-streamlit_gsheets
