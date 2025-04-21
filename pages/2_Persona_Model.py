@@ -13,12 +13,14 @@ import re
 from lib.google_sheet import get_sheet_by_name
 from lib.style import apply_custom_style
 
+# ✅ Configura la pagina (deve essere il primo comando Streamlit)
+st.set_page_config(page_title="📊 Personas Model Analysis", layout="wide")
+
 # ✅ Applica stile grafico centralizzato
 apply_custom_style()
 
-# ✅ Configura la pagina
-st.set_page_config(page_title="📊 Personas Model Analysis", layout="wide")
 st.title("📊 Analisi partecipanti - Personas Model")
+
 
 # ✅ Carica dati reali dal Google Sheet
 sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
