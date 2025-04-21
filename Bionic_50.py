@@ -55,8 +55,12 @@ if st.session_state.logged_in:
 
     # Accesso differenziato
     if ruolo == "bionic":
-        st.page_link("pages/2_Stakeholder.py", label="📊 Stakeholder")
-        st.page_link("pages/4_Matrice AHP.py", label="📐 Matrice AHP")
+        st.page_link("pages/2_Persona Model.py", label="📊 Stakeholder")
+        st.page_link("pages/3_Percezione Cittadino.py", label="📊 Stakeholder")
+        st.page_link("pages/4_Output Tavolo Rotondo.py", label="📊 Stakeholder")
+        st.page_link("pages/5_Valutazione Parchi.py", label="📐 Matrice AHP")
+        st.page_link("pages/6_Output Analisi.py", label="📐 Matrice AHP")
+        st.page_link("pages/7_Generazione Report.py", label="📐 Matrice AHP")
     elif ruolo == "responsabile":
         st.page_link("pages/3_Valutazione Verde.py", label="🌳 Valutazione Verde")
         st.page_link("pages/5_Valutazione Parchi.py", label="🗺️ Valutazione Parchi")
