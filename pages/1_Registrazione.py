@@ -43,7 +43,7 @@ st.markdown('<div class="header">🏠 Benvenuto nella dashboard di Bionic 4.0</d
 st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
 # ✅ Mostra l’ID partecipante all’utente
-st.info(f"🔑 Il tuo codice identificativo è: `{st.session_state['id_partecipante']}`\nSalvalo per eventuali riferimenti futuri.")
+st.info(f"🔑 Il tuo codice identificativo è: `{st.session_state['id_partecipante']}`\n Il codice serve per anonimizzare i dati.")
 
 # ✅ Carica le tavole rotonda attive da Google Sheet
 try:
