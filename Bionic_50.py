@@ -1,11 +1,10 @@
 import streamlit as st
 import base64
 from utils.auth import check_login
-from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 🌟 Stile mobile-friendly
+# 🌟 Mobile-friendly style
 st.markdown("""
     <style>
     .stButton button {
@@ -58,11 +57,11 @@ if not st.session_state.logged_in:
         if success:
             st.session_state.logged_in = True
             st.session_state.role = role
-            switch_page("1_Home")  # Reindirizza direttamente alla pagina Home
+            st.switch_page("pages/1_Home.py")  # ✅ Reindirizza direttamente alla pagina Home
         else:
             st.error("❌ Credenziali non valide")
 
-# 🔓 Logout
+# 🔓 Logout (opzionale: apparirà se utente forza il reload)
 if st.session_state.logged_in:
     if st.button("🔓 Logout"):
         st.session_state.logged_in = False
