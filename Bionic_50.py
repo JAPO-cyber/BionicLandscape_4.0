@@ -97,6 +97,6 @@ if st.session_state.logged_in:
     if st.button("🔓 Logout"):
         st.session_state.logged_in = False
         st.session_state.role = None
-        st.experimental_rerun()
+        st.stop() 
 
 
