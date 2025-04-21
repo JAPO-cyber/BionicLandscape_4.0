@@ -12,11 +12,14 @@ def get_gspread_client():
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
     return gspread.authorize(credentials)
 
-def get_sheet_by_name(sheet_name):
+# lib/google_sheet.py
+
+def get_sheet_by_name(sheet_name, worksheet_name="Sheet1"):
     client = get_gspread_client()
     try:
         spreadsheet = client.open(sheet_name)
-        return spreadsheet.sheet1  # o usa `.worksheet("NomeFoglio")` se necessario
+        return spreadsheet.worksheet(worksheet_name)
     except Exception as e:
-        st.error(f"Errore nel caricamento dello Sheet: {e}")
+        st.error(f"❌ Errore nel caricamento del foglio '{worksheet_name}': {e}")
         return None
+
