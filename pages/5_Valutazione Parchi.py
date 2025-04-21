@@ -63,9 +63,6 @@ st.pydeck_chart(pdk.Deck(
 if "valutazioni_parchi" not in st.session_state:
     st.session_state["valutazioni_parchi"] = {}
 
-if "feedback_generale" not in st.session_state:
-    st.session_state["feedback_generale"] = ""
-
 # Calcolo del numero di parchi votati
 n_votati = len(st.session_state["valutazioni_parchi"])
 n_totale = len(parchi)
@@ -94,18 +91,14 @@ if scelte:
         valore_default = valutazioni.get(criterio, 3)
         nuove_valutazioni[criterio] = st.slider(f"{criterio}", 1, 5, valore_default)
 
+    feedback = valutazioni.get("feedback", "")
+    nuove_valutazioni["feedback"] = st.text_area("Lascia un commento su questo parco (opzionale):", value=feedback)
+
     if st.button("Salva o aggiorna valutazione per questo parco"):
         st.session_state["valutazioni_parchi"][parco_selezionato] = nuove_valutazioni
         st.success(f"Valutazione salvata o aggiornata per {parco_selezionato}!")
 else:
     st.success("Hai completato la valutazione di tutti i parchi. Grazie per il tuo contributo!")
-
-# Campo di feedback finale
-st.subheader("\U0001F4AC Feedback generale opzionale")
-st.session_state["feedback_generale"] = st.text_area(
-    "Hai qualche suggerimento, commento o impressione da condividere sull'esperienza dei parchi a Bergamo?",
-    value=st.session_state["feedback_generale"]
-)
 
 # Mostra tutte le valutazioni inserite
 if st.session_state["valutazioni_parchi"]:
@@ -113,5 +106,6 @@ if st.session_state["valutazioni_parchi"]:
     st.write(pd.DataFrame(st.session_state["valutazioni_parchi"]).T)
 
     if st.button("\U0001F4E4 Invia le tue risposte"):
-        st.success("Grazie! Le tue valutazioni e il tuo feedback sono stati registrati.")
+        st.success("Grazie! Le tue valutazioni sono state registrate.")
+
 
