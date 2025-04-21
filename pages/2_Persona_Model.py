@@ -10,42 +10,33 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from scipy import stats
 import re
+from lib.google_sheet import get_sheet_by_name
+from lib.style import apply_custom_style
 
-# Caricamento dati simulati
-np.random.seed(42)
-n = 25
-ruoli = ["Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"]
-ambiti = ["Urbanistica", "Tecnologia e digitale", "Transizione ecologica",
-          "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"]
-valori_possibili = ["Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione"]
-visioni = ["Valori tradizionali", "Innovazione", "Equilibrio tra i due"]
-canali = ["Email", "Social", "Eventi pubblici", "Siti ufficiali", "Bacheche locali"]
-esperienza_partecipativa = ["Sì", "No"]
+# ✅ Applica stile grafico centralizzato
+apply_custom_style()
 
-def sample_valori():
-    return ", ".join(np.random.choice(valori_possibili, size=np.random.randint(1, 4), replace=False))
-
-df = pd.DataFrame({
-    "Tavola rotonda": np.random.choice(["Digitale e città", "Transizione ecologica", "Spazi pubblici e comunità",
-                                        "Futuro del lavoro", "Cultura e creatività"], size=n),
-    "Nome": [f"Partecipante {i+1}" for i in range(n)],
-    "Età": np.random.randint(18, 70, size=n),
-    "Professione": np.random.choice(["Ingegnere", "Studente", "Architetto", "Docente", "Impiegato", "Freelance"], size=n),
-    "Formazione": np.random.choice(["Informatica", "Architettura", "Scienze Politiche", "Economia", "Lettere", "Nessuna"], size=n),
-    "Ruolo": np.random.choice(ruoli, size=n),
-    "Ambito": np.random.choice(ambiti, size=n),
-    "Esperienza": np.random.choice(esperienza_partecipativa, size=n),
-    "Coinvolgimento": np.random.randint(0, 11, size=n),
-    "Conoscenza tema": np.random.randint(0, 11, size=n),
-    "Motivazione": ["Partecipo per contribuire al futuro della mia città."] * n,
-    "Obiettivo": ["Voglio condividere idee e ascoltare altri punti di vista."] * n,
-    "Visione": np.random.choice(visioni, size=n),
-    "Valori": [sample_valori() for _ in range(n)],
-    "Canale preferito": np.random.choice(canali, size=n)
-})
-
+# ✅ Configura la pagina
 st.set_page_config(page_title="📊 Personas Model Analysis", layout="wide")
 st.title("📊 Analisi partecipanti - Personas Model")
+
+# ✅ Carica dati reali dal Google Sheet
+sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
+
+if sheet:
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
+
+    # ✅ Filtra per tavola rotonda selezionata
+    tavola_rotonda = st.session_state.get("tavola_rotonda", None)
+    if tavola_rotonda:
+        df = df[df["Tavola rotonda"] == tavola_rotonda]
+        st.info(f"📌 Analisi basata sulla tavola rotonda selezionata: **{tavola_rotonda}**")
+    else:
+        st.warning("⚠️ Nessuna tavola rotonda selezionata. Mostro tutti i dati.")
+else:
+    st.error("❌ Errore nel caricamento dei dati da Google Sheets.")
+    st.stop()
 
 # Opzioni menu sidebar
 menu = [
