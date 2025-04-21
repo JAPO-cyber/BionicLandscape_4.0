@@ -2,8 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import io
+from datetime import datetime
+from lib.style import apply_custom_style
+from lib.google_sheet import get_sheet_by_name
+
+# ✅ Configura e applica lo stile
+st.set_page_config(page_title="🌿 Percezione Verde Urbano", layout="wide")
+apply_custom_style()
 
 st.title("3. Valutazione della Percezione del Verde Urbano")
+
 st.markdown("""
 Confronta tra loro i seguenti elementi del verde urbano in base alla tua percezione personale. 
 Seleziona quale consideri più importante e di quanto. I dati verranno usati per costruire una **matrice AHP individuale**.
@@ -52,7 +60,6 @@ with st.form("form_ahp_verde"):
     submitted = st.form_submit_button("Calcola Matrice AHP")
 
 if submitted:
-    # Mappatura valori AHP (scala di Saaty)
     scale_map = {
         "poco più importante": 3,
         "abbastanza più importante": 5,
@@ -66,15 +73,9 @@ if submitted:
             if "equamente" in option:
                 val = 1
             elif elementi_verde[i] in option:
-                for k, v in scale_map.items():
-                    if k in option:
-                        val = v
-                        break
+                val = next((v for k, v in scale_map.items() if k in option), 1)
             elif elementi_verde[j] in option:
-                for k, v in scale_map.items():
-                    if k in option:
-                        val = 1 / v
-                        break
+                val = 1 / next((v for k, v in scale_map.items() if k in option), 1)
             else:
                 val = 1
             comparison_matrix[i, j] = val
@@ -84,7 +85,6 @@ if submitted:
     st.subheader("📊 Matrice AHP Personale")
     st.dataframe(matrix_df)
 
-    # Calcolo autovalore principale e vettore dei pesi normalizzati
     eigvals, eigvecs = np.linalg.eig(comparison_matrix)
     max_index = np.argmax(eigvals.real)
     weights = eigvecs[:, max_index].real
@@ -97,20 +97,20 @@ if submitted:
     st.subheader("📌 Pesi Relativi Calcolati")
     st.dataframe(weights_df)
 
-    # Esportazione dei risultati
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        matrix_df.to_excel(writer, sheet_name="Matrice AHP")
-        weights_df.to_excel(writer, sheet_name="Pesi Relativi", index=False)
-    excel_data = output.getvalue()
+    # Salvataggio su Google Sheet
+    sheet = get_sheet_by_name("Dati_Partecipante", "Pesi Parametri")
+    if sheet:
+        row = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Utente": st.session_state.get("username", "anonimo"),
+            "Tavola rotonda": st.session_state.get("tavola_rotonda", "non specificata")
+        }
+        for elemento, peso in zip(elementi_verde, weights):
+            row[elemento] = round(peso, 4)
+        sheet.append_row(list(row.values()))
+        st.success("✅ Valutazione salvata nel foglio 'Pesi Parametri'!")
+    else:
+        st.error("❌ Errore nel salvataggio su Google Sheet.")
 
-    st.download_button(
-        "📥 Scarica la tua valutazione AHP (Excel)",
-        data=excel_data,
-        file_name="valutazione_verde_ahp.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-    # Salva nel session state per la pagina successiva
     st.session_state["matrice_utente"] = matrix_df
     st.session_state["pesi_utente"] = weights_df
