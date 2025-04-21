@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 from utils.auth import check_login
+from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
@@ -68,33 +69,28 @@ if st.session_state.logged_in:
 
     st.markdown("### 📱 Seleziona una sezione:")
 
-    def mobile_link(path, label):
-        st.markdown(
-            f"""
-            <a href="/{path}" target="_self">
-                <button style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-bottom: 0.5rem;">{label}</button>
-            </a>
-            """,
-            unsafe_allow_html=True
-        )
+    def mobile_link(page_name, label):
+        if st.button(label):
+            switch_page(page_name)
 
     if ruolo == "bionic":
-        mobile_link("pages/1_Home.py", "🏠 Home")
-        mobile_link("pages/2_Persona_Model.py", "👤 Persona Model")
-        mobile_link("pages/3_Percezione_Cittadino.py", "🧠 Percezione Cittadino")
-        mobile_link("pages/4_Output_Tavolo_Rotondo.py", "🗣️ Output Tavolo Rotondo")
-        mobile_link("pages/5_Valutazione_Parchi.py", "🏞️ Valutazione Parchi")
-        mobile_link("pages/6_Output_Analisi.py", "📊 Analisi Finale")
-        mobile_link("pages/7_Generazione_Report.py", "📝 Generazione Report")
+        mobile_link("1_Home", "🏠 Home")
+        mobile_link("2_Persona_Model", "👤 Persona Model")
+        mobile_link("3_Percezione_Cittadino", "🧠 Percezione Cittadino")
+        mobile_link("4_Output_Tavolo_Rotondo", "🗣️ Output Tavolo Rotondo")
+        mobile_link("5_Valutazione_Parchi", "🏞️ Valutazione Parchi")
+        mobile_link("6_Output_Analisi", "📊 Analisi Finale")
+        mobile_link("7_Generazione_Report", "📝 Generazione Report")
 
     elif ruolo == "responsabile":
-        mobile_link("pages/1_Home.py", "🏠 Home")
-        mobile_link("pages/3_Percezione_Cittadino.py", "🧠 Percezione Cittadino")
-        mobile_link("pages/5_Valutazione_Parchi.py", "🏞️ Valutazione Parchi")
+        mobile_link("1_Home", "🏠 Home")
+        mobile_link("3_Percezione_Cittadino", "🧠 Percezione Cittadino")
+        mobile_link("5_Valutazione_Parchi", "🏞️ Valutazione Parchi")
 
     # 🔓 Logout
     if st.button("🔓 Logout"):
         st.session_state.logged_in = False
         st.session_state.role = None
         st.rerun()
+
 
