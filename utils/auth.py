@@ -3,7 +3,7 @@
 def check_login(username, password):
     users = {
         "admin": ("bionic", "bionic"),
-        "cittadino": ("responsabile", "responsabile")
+        "cittadino": ("cittadino", "cittadino")
     }
 
     if username in users:
