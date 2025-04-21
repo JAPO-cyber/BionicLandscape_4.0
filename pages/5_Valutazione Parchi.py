@@ -7,7 +7,7 @@ st.title("5. Valutazione dei parchi di Bergamo")
 
 st.markdown("""
 In questa pagina ti chiediamo di valutare alcuni parchi urbani del quartiere di Bergamo, in base ai criteri emersi dall'analisi AHP del tavolo rotondo.
-Ogni parco è rappresentato sulla mappa qui sotto. Seleziona un parco per visualizzarne una foto e fornire una valutazione.
+Ogni parco è rappresentato sulla mappa qui sotto. Seleziona un parco per visualizzarne le informazioni e fornire una valutazione.
 """)
 
 # Criteri AHP definiti nella fase precedente
@@ -19,16 +19,20 @@ criteri = [
     "Funzione ambientale"
 ]
 
-# Lista di parchi con geolocalizzazione e immagini
+# Lista di parchi con geolocalizzazione, descrizione e immagini
 parchi = [
     {"nome": "Parco Suardi", "lat": 45.7035, "lon": 9.6783,
+     "descrizione": "Situato vicino al centro, offre ampi spazi verdi, giochi per bambini e monumenti storici.",
      "img": "https://upload.wikimedia.org/wikipedia/commons/2/26/Parco_Suardi_Bergamo_2.jpg"},
     {"nome": "Parco della Trucca", "lat": 45.6847, "lon": 9.6240,
+     "descrizione": "Parco molto ampio con laghetti, pista ciclabile e ampi spazi per picnic.",
      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Bergamo_-_Parco_della_Trucca.jpg/1280px-Bergamo_-_Parco_della_Trucca.jpg"},
     {"nome": "Parco Goisis", "lat": 45.7151, "lon": 9.6821,
-     "img": "https://www.bergamoavvenimenti.it/media/cache/luoghi_large/media/locations/images/2020/05/27/parco_goisis.jpg"},
+     "descrizione": "Area verde con attrezzature sportive, giochi e ampi spazi per attività motorie.",
+     "img": "https://upload.wikimedia.org/wikipedia/commons/3/32/Parco_Goisis_Bergamo.jpg"},
     {"nome": "Parco Locatelli", "lat": 45.7080, "lon": 9.6695,
-     "img": "https://www.visitbergamo.net/uploads/immagini/parco%20locatelli.jpg"}
+     "descrizione": "Piccolo parco di quartiere ben curato e frequentato da famiglie.",
+     "img": "https://upload.wikimedia.org/wikipedia/commons/8/81/Parco_Locatelli_Bergamo.jpg"}
 ]
 
 # Mappa dei parchi
@@ -58,7 +62,9 @@ st.subheader("\U0001F4DD Valuta ciascun parco")
 parco_selezionato = st.selectbox("Seleziona un parco da valutare:", [p['nome'] for p in parchi])
 parco_dati = next(p for p in parchi if p['nome'] == parco_selezionato)
 
-st.image(parco_dati['img'], caption=parco_dati['nome'], use_container_width=True)
+st.markdown(f"**{parco_dati['nome']}**")
+st.markdown(f"_{parco_dati['descrizione']}_")
+st.image(parco_dati["img"], use_container_width=True)
 
 if "valutazioni_parchi" not in st.session_state:
     st.session_state["valutazioni_parchi"] = {}
@@ -76,4 +82,3 @@ if st.button("Salva valutazione per questo parco"):
 if st.session_state["valutazioni_parchi"]:
     st.subheader("\U0001F4C8 Riepilogo delle valutazioni inserite")
     st.write(pd.DataFrame(st.session_state["valutazioni_parchi"]).T)
-
