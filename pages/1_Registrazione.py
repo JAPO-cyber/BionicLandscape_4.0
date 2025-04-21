@@ -1,18 +1,17 @@
 import streamlit as st
-import gspread
 import pandas as pd
 import datetime
-from oauth2client.service_account import ServiceAccountCredentials
+from lib.google_sheet import get_sheet_by_name
 
-# ✅ Configura Streamlit
+# ✅ Configura pagina
 st.set_page_config(page_title="Bionic 4.0 - Registrazione", layout="wide")
 
-# ✅ Blocca accesso se non loggato
+# ✅ Verifica login
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.error("❌ Accesso negato. Torna alla pagina principale.")
     st.stop()
 
-# ✅ Stile con immagine di sfondo leggibile
+# ✅ Sfondo e stile
 st.markdown("""
     <style>
     .stApp {
@@ -72,10 +71,10 @@ with st.form("user_info_form"):
 
     submitted = st.form_submit_button("Invia")
 
-# ✅ Dopo invio
+# ✅ Salvataggio dati
 if submitted:
     if not all([nome, professione, ruolo, ambito, motivazione, obiettivo, valori]):
-        st.error("⚠️ Compila tutti i campi obbligatori.")
+        st.error("⚠️ Compila tutti i campi obbligatori prima di continuare.")
     else:
         dati_utente = {
             "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -97,22 +96,16 @@ if submitted:
             "Canale preferito": canale
         }
 
-        # ✅ Salvataggio con gspread
         try:
-            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
-            client = gspread.authorize(creds)
-
-            sheet = client.open_by_key("1tmrKLNacl_Uegbo0VAS5MnhyAHmSYwCyX8GeHZycoos")
-            worksheet = sheet.worksheet("Partecipanti")
-            worksheet.append_row(list(dati_utente.values()))
-
+            sheet = get_sheet_by_name("Dati_Partecipanti")
+            sheet.append_row(list(dati_utente.values()))
             st.success("✅ Dati salvati con successo!")
             st.switch_page("pages/2_Persona_Model.py")
 
         except Exception as e:
             st.error("❌ Errore durante il salvataggio dei dati.")
             st.text(f"Dettaglio: {e}")
+
 
 
 
