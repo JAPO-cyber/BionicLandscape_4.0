@@ -72,7 +72,7 @@ else:
         x=elementi_verde[0],
         y=elementi_verde[1],
         color="Cluster",
-        hover_data=["Utente", tavola_column, "Età", "Ruolo", "Ambito"]
+        hover_data=["Utente_x", tavola_column, "Età", "Ruolo", "Ambito"]
     )
     st.plotly_chart(fig2, use_container_width=True)
 
