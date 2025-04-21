@@ -10,11 +10,22 @@ from lib.google_sheet import get_sheet_by_name
 st.set_page_config(page_title="🌿 Percezione Verde Urbano", layout="wide")
 apply_custom_style()
 
-st.title("3. Valutazione della Percezione del Verde Urbano")
+# ✅ Verifica login
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.error("❌ Accesso negato. Torna alla pagina principale.")
+    st.stop()
+
+# ✅ Verifica esistenza della chiave univoca
+if "id_partecipante" not in st.session_state:
+    st.error("❌ Identificativo partecipante mancante. Torna alla pagina di registrazione.")
+    st.stop()
+
+# ✅ Titolo e istruzioni
+st.title("Valutazione della Percezione del Verde Urbano")
 
 st.markdown("""
 Confronta tra loro i seguenti elementi del verde urbano in base alla tua percezione personale. 
-Seleziona quale consideri più importante e di quanto. I dati verranno usati per costruire una **matrice AHP individuale**.
+Seleziona quale consideri più importante e di quanto. I dati verranno usati per costruire una matrice di pesi individuale.
 """)
 
 # Lista degli elementi significativi del verde urbano
@@ -31,6 +42,7 @@ st.subheader("Confronti AHP tra gli elementi del verde urbano")
 n = len(elementi_verde)
 comparison_matrix = np.ones((n, n))
 
+# ✅ Form con confronti AHP
 with st.form("form_ahp_verde"):
     responses = {}
     st.write("Per ciascuna coppia, scegli il rapporto di importanza percepito.")
@@ -57,8 +69,9 @@ with st.form("form_ahp_verde"):
                 )
                 responses[f"{i}_{j}"] = option
 
-    submitted = st.form_submit_button("Calcola Matrice AHP")
+    submitted = st.form_submit_button("Calcola Matrice Pesi")
 
+# ✅ Calcolo della matrice AHP e salvataggio
 if submitted:
     scale_map = {
         "poco più importante": 3,
@@ -82,8 +95,6 @@ if submitted:
             comparison_matrix[j, i] = 1 / val
 
     matrix_df = pd.DataFrame(comparison_matrix, index=elementi_verde, columns=elementi_verde)
-    st.subheader("📊 Matrice AHP Personale")
-    st.dataframe(matrix_df)
 
     eigvals, eigvecs = np.linalg.eig(comparison_matrix)
     max_index = np.argmax(eigvals.real)
@@ -94,15 +105,16 @@ if submitted:
         "Elemento": elementi_verde,
         "Peso Relativo": weights
     })
+
     st.subheader("📌 Pesi Relativi Calcolati")
     st.dataframe(weights_df)
 
-    # Salvataggio su Google Sheet
+    # ✅ Salvataggio su Google Sheet
     sheet = get_sheet_by_name("Dati_Partecipante", "Pesi Parametri")
     if sheet:
         row = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Utente": st.session_state.get("username", "anonimo"),
+            "ID Partecipante": st.session_state["id_partecipante"],
             "Tavola rotonda": st.session_state.get("tavola_rotonda", "non specificata")
         }
         for elemento, peso in zip(elementi_verde, weights):
@@ -112,5 +124,7 @@ if submitted:
     else:
         st.error("❌ Errore nel salvataggio su Google Sheet.")
 
+    # ✅ Salva in sessione anche per la prossima pagina
     st.session_state["matrice_utente"] = matrix_df
     st.session_state["pesi_utente"] = weights_df
+
