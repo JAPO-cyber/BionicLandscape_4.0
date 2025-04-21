@@ -97,3 +97,4 @@ if st.session_state.logged_in:
         st.session_state.logged_in = False
         st.session_state.role = None
         st.rerun()
+
