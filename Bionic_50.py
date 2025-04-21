@@ -5,7 +5,7 @@ from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 🌟 Mobile-friendly style
+# 🌟 Stile mobile-friendly
 st.markdown("""
     <style>
     .stButton button {
@@ -58,43 +58,12 @@ if not st.session_state.logged_in:
         if success:
             st.session_state.logged_in = True
             st.session_state.role = role
-            st.rerun()  # forza ricaricamento
+            switch_page("1_Home")  # Reindirizza direttamente alla pagina Home
         else:
             st.error("❌ Credenziali non valide")
 
-# 🔁 Switch pagina richiesto dopo click
-if "page_to_go" in st.session_state:
-    page = st.session_state.page_to_go
-    del st.session_state.page_to_go
-    switch_page(page)
-
-# ✅ Dopo login: menu mobile-friendly
+# 🔓 Logout
 if st.session_state.logged_in:
-    ruolo = st.session_state.role
-    st.success(f"✅ Login effettuato come **{ruolo}**")
-
-    st.markdown("### 📱 Seleziona una sezione:")
-
-    def mobile_link(page_name, label):
-        if st.button(label, key=f"go_{page_name}"):
-            st.session_state.page_to_go = page_name
-            st.rerun()
-
-    if ruolo == "bionic":
-        mobile_link("1_Home", "🏠 Home")
-        mobile_link("2_Persona_Model", "👤 Persona Model")
-        mobile_link("3_Percezione_Cittadino", "🧠 Percezione Cittadino")
-        mobile_link("4_Output_Tavolo_Rotondo", "🗣️ Output Tavolo Rotondo")
-        mobile_link("5_Valutazione_Parchi", "🏞️ Valutazione Parchi")
-        mobile_link("6_Output_Analisi", "📊 Analisi Finale")
-        mobile_link("7_Generazione_Report", "📝 Generazione Report")
-
-    elif ruolo == "responsabile":
-        mobile_link("1_Home", "🏠 Home")
-        mobile_link("3_Percezione_Cittadino", "🧠 Percezione Cittadino")
-        mobile_link("5_Valutazione_Parchi", "🏞️ Valutazione Parchi")
-
-    # 🔓 Logout
     if st.button("🔓 Logout"):
         st.session_state.logged_in = False
         st.session_state.role = None
