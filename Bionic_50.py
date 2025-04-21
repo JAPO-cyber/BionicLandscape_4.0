@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 from utils.auth import check_login
-from streamlit_extras.switch_page_button import switch_page
+from streamlit_extras.switch_page_button import switch_page, get_pages
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
@@ -69,9 +69,13 @@ if st.session_state.logged_in:
 
     st.markdown("### 📱 Seleziona una sezione:")
 
+    # ✅ Funzione di navigazione con key univoche
     def mobile_link(page_name, label):
-        if st.button(label):
+        if st.button(label, key=f"go_{page_name}"):
             switch_page(page_name)
+
+    # 🔎 Debug (opzionale): stampa le pagine disponibili
+    # st.write("DEBUG - Pagine disponibili:", get_pages("pages"))
 
     if ruolo == "bionic":
         mobile_link("1_Home", "🏠 Home")
