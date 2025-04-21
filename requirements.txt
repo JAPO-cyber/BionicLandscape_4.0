@@ -8,3 +8,5 @@ seaborn
 xlsxwriter
 python-docx
 kaleido
+gspread 
+oauth2client
