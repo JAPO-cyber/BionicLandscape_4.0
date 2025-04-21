@@ -21,6 +21,11 @@ apply_custom_style()
 
 st.title("📊 Analisi partecipanti - Personas Model")
 
+# 🔗 Pulsante per andare alla schermata successiva
+st.markdown("---")
+st.page_link("pages/3_Percezione_Cittadino.py", label="➡️ Vai a Percezione Cittadino", icon="🧠")
+st.markdown("---")
+
 # ✅ Carica dati reali dal Google Sheet
 sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
 
@@ -54,6 +59,9 @@ menu = [
     "Test ANOVA e Normalità", "PCA 2D", "Silhouette Score"
 ]
 scelta = st.sidebar.selectbox("🔍 Seleziona l'analisi da visualizzare", menu)
+
+# [segue codice delle analisi, invariato rispetto alla versione precedente...]
+
 
 # Esegui la sezione corrispondente
 if scelta == "Dataset":
