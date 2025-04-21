@@ -1,8 +1,19 @@
 import streamlit as st
 import base64
-from utils.auth import check_login  # Funzione personalizzata
+from utils.auth import check_login
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
+
+# Nascondi il menu laterale e footer Streamlit
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .css-18e3th9 {padding-top: 1rem;}
+    .css-1d391kg {display: none;}  /* Nasconde hamburger menu */
+    </style>
+""", unsafe_allow_html=True)
 
 # Funzione per impostare lo sfondo
 def set_background(image_path):
@@ -25,23 +36,39 @@ def set_background(image_path):
 # Imposta lo sfondo
 set_background("assets/bg.jpg")
 
-# Stato di login
+# Stato sessione
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "role" not in st.session_state:
+    st.session_state.role = None
 
-# Form di login
+# Form login
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-    
+
     if st.button("Login"):
-        if check_login(username, password):
+        success, role = check_login(username, password)
+        if success:
             st.session_state.logged_in = True
+            st.session_state.role = role
         else:
             st.error("Credenziali non valide")
 
-# Se loggato, mostra accesso alla Home
+# Se loggato
 if st.session_state.logged_in:
-    st.success("Login effettuato con successo!")
-    st.page_link("pages/1_Home.py", label="➡️ Vai alla Home", icon="🏠")
+    ruolo = st.session_state.role
+    st.success(f"✅ Login effettuato come **{ruolo}**")
+
+    # Link comuni
+    st.page_link("pages/1_Home.py", label="🏠 Home")
+
+    # Accesso differenziato
+    if ruolo == "bionic":
+        st.page_link("pages/2_Stakeholder.py", label="📊 Stakeholder")
+        st.page_link("pages/4_Matrice AHP.py", label="📐 Matrice AHP")
+    elif ruolo == "responsabile":
+        st.page_link("pages/3_Valutazione Verde.py", label="🌳 Valutazione Verde")
+        st.page_link("pages/5_Valutazione Parchi.py", label="🗺️ Valutazione Parchi")
+
