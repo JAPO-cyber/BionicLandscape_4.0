@@ -3,12 +3,14 @@ import pandas as pd
 import numpy as np
 from scipy.stats import gmean
 from sklearn.cluster import KMeans
+import plotly.express as px
 import random
+import io
 
-st.title("4. Output Tavolo Rotondo")
+st.title("4. Matrice AHP del Tavolo Rotondo")
 st.markdown("""
 In questa pagina analizziamo l'importanza percepita del verde urbano da parte dei partecipanti, 
-combinando le loro valutazioni e clusterizzando le opinioni in base ai profili del **modello persona**.
+combinando le loro matrici AHP e clusterizzando le opinioni in base ai profili del **modello persona**.
 """)
 
 # -------------------------------
@@ -29,11 +31,9 @@ scala_valori = [1, 3, 5, 7, 9]
 # -------------------------------
 st.subheader("🎭 Profili dei partecipanti")
 
-# Se hai già il model persona generato:
 if "persona_model" in st.session_state:
     profili_df = st.session_state["persona_model"]
 else:
-    # Simulazione di 30 profili esempio (puoi sostituire con il tuo dataset reale)
     zone = ["Centro", "Periferia", "Area Verde", "Area Mista"]
     ruoli = ["Studente", "Tecnico", "Cittadino", "Attivista", "Urbanista"]
     eta_range = list(range(18, 66))
@@ -79,11 +79,10 @@ combined_df = pd.DataFrame(combined_matrix, index=elementi_verde, columns=elemen
 st.subheader("🔗 Matrice AHP Aggregata")
 st.dataframe(combined_df)
 
-# Calcolo dei pesi aggregati
 eigvals, eigvecs = np.linalg.eig(combined_matrix)
 max_idx = np.argmax(eigvals.real)
 weights = eigvecs[:, max_idx].real
-weights = weights / weights.sum()
+weights /= weights.sum()
 weights_df = pd.DataFrame({
     "Elemento": elementi_verde,
     "Peso Aggregato": weights
@@ -93,23 +92,39 @@ st.subheader("📌 Pesi Aggregati AHP")
 st.dataframe(weights_df)
 
 # -------------------------------
-# 5. CLUSTERING PER PROFILI
+# 5. CLUSTERING + COERENZA
 # -------------------------------
-st.subheader("📈 Analisi Cluster sulle Percezioni")
+st.subheader("📈 Analisi Cluster + Coerenza")
 
-# Calcolo dei vettori pesi individuali
+def calcola_cr(matrice):
+    eigvals, _ = np.linalg.eig(matrice)
+    lambda_max = np.max(eigvals.real)
+    ci = (lambda_max - n) / (n - 1)
+    ri_values = {1: 0.0, 2: 0.0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32}
+    ri = ri_values.get(n, 1.12)
+    cr = ci / ri if ri != 0 else 0
+    return round(ci, 4), round(cr, 4)
+
 feature_vectors = []
+ci_list = []
+cr_list = []
+
 for matrix in matrici:
     eigvals, eigvecs = np.linalg.eig(matrix)
     max_idx = np.argmax(eigvals.real)
     w = eigvecs[:, max_idx].real
     w = w / w.sum()
     feature_vectors.append(w)
+    ci, cr = calcola_cr(matrix)
+    ci_list.append(ci)
+    cr_list.append(cr)
+
 feature_vectors = np.array(feature_vectors)
 
-# Aggiunta al dataframe dei profili
 cluster_df = profili_df.copy()
 cluster_df[elementi_verde] = feature_vectors
+cluster_df["CI"] = ci_list
+cluster_df["CR"] = cr_list
 
 k = st.slider("Numero di cluster", 2, 6, 3)
 kmeans = KMeans(n_clusters=k, random_state=42)
@@ -118,15 +133,29 @@ cluster_df["Cluster"] = cluster_labels
 
 st.dataframe(cluster_df)
 
-# Media per cluster
 media_cluster = cluster_df.groupby("Cluster")[elementi_verde].mean()
 st.subheader("📊 Media dei Pesi per Cluster")
 st.dataframe(media_cluster)
 
 # -------------------------------
-# 6. ESPORTAZIONE
+# 6. VISUALIZZAZIONI INTERATTIVE
 # -------------------------------
-import io
+st.subheader("📊 Grafico Interattivo - Pesi AHP")
+fig = px.bar(weights_df, x="Elemento", y="Peso Aggregato", title="Pesi AHP Aggregati", text_auto=True)
+st.plotly_chart(fig, use_container_width=True)
+
+st.subheader("🧪 Distribuzione Consistency Ratio (CR)")
+fig2 = px.histogram(cluster_df, x="CR", nbins=10, title="Distribuzione del Consistency Ratio (CR)")
+st.plotly_chart(fig2, use_container_width=True)
+
+st.subheader("🎯 Cluster Interattivi")
+fig3 = px.scatter(cluster_df, x=elementi_verde[0], y=elementi_verde[1],
+                  color="Cluster", hover_data=["ID", "Ruolo", "Età", "Zona", "CR"])
+st.plotly_chart(fig3, use_container_width=True)
+
+# -------------------------------
+# 7. ESPORTAZIONE
+# -------------------------------
 output = io.BytesIO()
 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
     profili_df.to_excel(writer, sheet_name="Profili", index=False)
@@ -141,3 +170,5 @@ st.download_button(
     file_name="ahp_tavolo_rotondo_risultati.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
+
