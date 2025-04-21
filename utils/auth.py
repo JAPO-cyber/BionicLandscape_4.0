@@ -1,5 +1,14 @@
 import streamlit as st
 
-# Esempio semplice con un utente hardcoded (per test locali)
 def check_login(username, password):
-    return username == "admin" and password == "bionic"
+    # Dizionario utenti: username → (password, ruolo)
+    users = {
+        "admin": ("password1", "bionic"),
+        "cittadino": ("password2", "responsabile")
+    }
+
+    if username in users and users[username][0] == password:
+        return True, users[username][1]  # login OK, ritorna anche il ruolo
+    else:
+        return False, None
+
