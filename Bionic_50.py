@@ -57,7 +57,7 @@ if not st.session_state.logged_in:
         if success:
             st.session_state.logged_in = True
             st.session_state.role = role
-            st.experimental_rerun()  # forza ricaricamento
+            st.rerun()  # forza ricaricamento
         else:
             st.error("❌ Credenziali non valide")
 
@@ -96,4 +96,4 @@ if st.session_state.logged_in:
     if st.button("🔓 Logout"):
         st.session_state.logged_in = False
         st.session_state.role = None
-        st.experimental_rerun()
+        st.rerun()
