@@ -20,11 +20,34 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.error("❌ Accesso negato. Torna alla pagina principale.")
     st.stop()
 
-# ✅ Stile e sfondo
+# ✅ Configurazione base
 st.set_page_config(page_title="Bionic 4.0 - Home", layout="wide")
 
+# ✅ CSS: sfondo intorno al box, form leggibile
 st.markdown("""
     <style>
+    body, .stApp {
+        background-color: transparent;
+    }
+
+    .custom-bg {
+        background-image: url("https://raw.githubusercontent.com/JAPO-cyber/BionicLandscape_4.0/main/assets/bg.jpg");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        padding: 3rem 1rem;
+        min-height: 100vh;
+    }
+
+    .form-container {
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 2rem;
+        border-radius: 20px;
+        max-width: 900px;
+        margin: auto;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    }
+
     .stButton button {
         width: 100%;
         padding: 1rem;
@@ -32,114 +55,86 @@ st.markdown("""
         margin-bottom: 0.5rem;
         border-radius: 10px;
     }
-    .block-container {
-        padding: 1rem 1rem 2rem 1rem;
-    }
-    .form-container {
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
     </style>
 """, unsafe_allow_html=True)
 
-def set_background(image_path):
-    with open(image_path, "rb") as img_file:
-        bg_image = base64.b64encode(img_file.read()).decode()
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{bg_image}");
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+# ✅ Inizio contenuto
+st.markdown('<div class="custom-bg">', unsafe_allow_html=True)
+st.markdown('<div class="form-container">', unsafe_allow_html=True)
 
-set_background("assets/bg.jpg")
-
-# ✅ Titolo
 st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
 st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
-# ✅ FORM con contenitore leggibile
-with st.container():
-    st.markdown('<div class="form-container">', unsafe_allow_html=True)
+with st.form("user_info_form"):
+    tavola_rotonda = st.selectbox(
+        "🔘 Tavola rotonda",
+        [
+            "Digitale e città",
+            "Transizione ecologica",
+            "Spazi pubblici e comunità",
+            "Futuro del lavoro",
+            "Cultura e creatività",
+        ]
+    )
+    nome = st.text_input("👤 Nome")
+    eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
+    professione = st.text_input("💼 Professione")
+    ruolo = st.selectbox(
+        "🎭 Qual è il tuo ruolo in questo progetto?",
+        ["Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"]
+    )
+    formazione = st.text_input("🎓 Formazione o background (facoltativo)", placeholder="Esempio: Architettura, Economia, Informatica...")
 
-    with st.form("user_info_form"):
-        tavola_rotonda = st.selectbox(
-            "🔘 Tavola rotonda",
-            [
-                "Digitale e città",
-                "Transizione ecologica",
-                "Spazi pubblici e comunità",
-                "Futuro del lavoro",
-                "Cultura e creatività",
-            ]
-        )
-        nome = st.text_input("👤 Nome")
-        eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
-        professione = st.text_input("💼 Professione")
-        ruolo = st.selectbox(
-            "🎭 Qual è il tuo ruolo in questo progetto?",
-            ["Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"]
-        )
-        formazione = st.text_input("🎓 Formazione o background (facoltativo)", placeholder="Esempio: Architettura, Economia, Informatica...")
+    ambito = st.selectbox(
+        "🌱 Qual è il tuo principale ambito di interesse?",
+        ["Urbanistica", "Tecnologia e digitale", "Transizione ecologica", 
+         "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"]
+    )
 
-        ambito = st.selectbox(
-            "🌱 Qual è il tuo principale ambito di interesse?",
-            ["Urbanistica", "Tecnologia e digitale", "Transizione ecologica", 
-             "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"]
-        )
+    esperienza = st.radio(
+        "🧭 Hai già partecipato ad altri progetti partecipativi?",
+        ["Sì", "No"]
+    )
 
-        esperienza = st.radio(
-            "🧭 Hai già partecipato ad altri progetti partecipativi?",
-            ["Sì", "No"]
-        )
+    coinvolgimento = st.slider(
+        "📍 Quanto ti senti coinvolto/a nella vita del tuo territorio?",
+        0, 10, 5
+    )
 
-        coinvolgimento = st.slider(
-            "📍 Quanto ti senti coinvolto/a nella vita del tuo territorio?",
-            0, 10, 5
-        )
+    conoscenza = st.slider(
+        "📚 Quanto conosci il tema di questa tavola rotonda?",
+        0, 10, 5
+    )
 
-        conoscenza = st.slider(
-            "📚 Quanto conosci il tema di questa tavola rotonda?",
-            0, 10, 5
-        )
+    motivazione = st.text_area(
+        "🗣️ Cosa ti ha spinto a partecipare a questo tavolo di lavoro?",
+        placeholder="Scrivi liberamente..."
+    )
 
-        motivazione = st.text_area(
-            "🗣️ Cosa ti ha spinto a partecipare a questo tavolo di lavoro?",
-            placeholder="Scrivi liberamente..."
-        )
+    obiettivo = st.text_area(
+        "🎯 Cosa ti piacerebbe ottenere da questo incontro?",
+        placeholder="Ad esempio: conoscere persone, contribuire a un'idea, essere aggiornato..."
+    )
 
-        obiettivo = st.text_area(
-            "🎯 Cosa ti piacerebbe ottenere da questo incontro?",
-            placeholder="Ad esempio: conoscere persone, contribuire a un'idea, essere aggiornato..."
-        )
+    visione = st.radio(
+        "🔍 Ti senti più orientato a...",
+        ["Valori tradizionali", "Innovazione", "Equilibrio tra i due"]
+    )
 
-        visione = st.radio(
-            "🔍 Ti senti più orientato a...",
-            ["Valori tradizionali", "Innovazione", "Equilibrio tra i due"]
-        )
+    valori = st.multiselect(
+        "❤️ Quali di questi valori senti più vicini?",
+        ["Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione"]
+    )
 
-        valori = st.multiselect(
-            "❤️ Quali di questi valori senti più vicini?",
-            ["Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione"]
-        )
+    canale = st.selectbox(
+        "📡 Come preferisci essere aggiornato su iniziative pubbliche?",
+        ["Email", "Social", "Eventi pubblici", "Siti ufficiali", "Bacheche locali"]
+    )
 
-        canale = st.selectbox(
-            "📡 Come preferisci essere aggiornato su iniziative pubbliche?",
-            ["Email", "Social", "Eventi pubblici", "Siti ufficiali", "Bacheche locali"]
-        )
+    submitted = st.form_submit_button("Invia")
 
-        submitted = st.form_submit_button("Invia")
-
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ✅ Dopo l'invio
 if submitted:
