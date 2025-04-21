@@ -21,7 +21,6 @@ apply_custom_style()
 
 st.title("📊 Analisi partecipanti - Personas Model")
 
-
 # ✅ Carica dati reali dal Google Sheet
 sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
 
@@ -29,13 +28,17 @@ if sheet:
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
 
-    # ✅ Filtra per tavola rotonda selezionata
+    # ✅ Filtra per tavola rotonda selezionata o consenti scelta
     tavola_rotonda = st.session_state.get("tavola_rotonda", None)
     if tavola_rotonda:
         df = df[df["Tavola rotonda"] == tavola_rotonda]
         st.info(f"📌 Analisi basata sulla tavola rotonda selezionata: **{tavola_rotonda}**")
     else:
-        st.warning("⚠️ Nessuna tavola rotonda selezionata. Mostro tutti i dati.")
+        st.warning("⚠️ Nessuna tavola rotonda selezionata nella fase precedente.")
+        tavole_uniche = df["Tavola rotonda"].unique().tolist()
+        scelta_manuale = st.selectbox("🔘 Seleziona manualmente la tavola rotonda da analizzare:", tavole_uniche)
+        df = df[df["Tavola rotonda"] == scelta_manuale]
+        st.info(f"📌 Analisi basata sulla tavola rotonda selezionata: **{scelta_manuale}**")
 else:
     st.error("❌ Errore nel caricamento dei dati da Google Sheets.")
     st.stop()
