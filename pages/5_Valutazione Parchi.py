@@ -58,7 +58,7 @@ st.subheader("\U0001F4DD Valuta ciascun parco")
 parco_selezionato = st.selectbox("Seleziona un parco da valutare:", [p['nome'] for p in parchi])
 parco_dati = next(p for p in parchi if p['nome'] == parco_selezionato)
 
-st.image(parco_dati['img'], caption=parco_dati['nome'], use_column_width=True)
+st.image(parco_dati['img'], caption=parco_dati['nome'], use_container_width=True)
 
 if "valutazioni_parchi" not in st.session_state:
     st.session_state["valutazioni_parchi"] = {}
@@ -76,3 +76,4 @@ if st.button("Salva valutazione per questo parco"):
 if st.session_state["valutazioni_parchi"]:
     st.subheader("\U0001F4C8 Riepilogo delle valutazioni inserite")
     st.write(pd.DataFrame(st.session_state["valutazioni_parchi"]).T)
+
