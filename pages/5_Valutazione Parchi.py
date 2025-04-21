@@ -41,10 +41,12 @@ parchi_df = pd.DataFrame(parchi)
 st.pydeck_chart(pdk.Deck(
     map_style='mapbox://styles/mapbox/light-v9',
     initial_view_state=pdk.ViewState(
-        latitude=45.70,
-        longitude=9.67,
-        zoom=12,
+        latitude=45.6983,
+        longitude=9.6773,
+        zoom=13,
         pitch=0,
+        max_zoom=14,
+        min_zoom=11
     ),
     layers=[
         pdk.Layer(
@@ -93,4 +95,5 @@ else:
 if st.session_state["valutazioni_parchi"]:
     st.subheader("\U0001F4C8 Riepilogo delle valutazioni inserite")
     st.write(pd.DataFrame(st.session_state["valutazioni_parchi"]).T)
+
 
