@@ -6,5 +6,5 @@ scikit-learn
 matplotlib
 seaborn
 xlsxwriter
-docx
+python-docx
 kaleido
