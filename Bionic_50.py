@@ -58,7 +58,6 @@ if not st.session_state.logged_in:
             st.session_state.logged_in = True
             st.session_state.role = role
             st.experimental_rerun()  # forza ricaricamento
-            st.stop()  # buona pratica per evitare esecuzioni residue
         else:
             st.error("❌ Credenziali non valide")
 
@@ -98,4 +97,3 @@ if st.session_state.logged_in:
         st.session_state.logged_in = False
         st.session_state.role = None
         st.experimental_rerun()
-        st.stop()
