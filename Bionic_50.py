@@ -1,14 +1,11 @@
 import streamlit as st
 from utils.auth import check_login
-from lib.style import set_background, set_custom_style
+from lib.style import apply_custom_style
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 💄 Applica lo stile
-set_custom_style()
-
-# 🖼️ Imposta lo sfondo
-set_background("assets/bg.jpg")
+# ✅ Applica stile grafico centralizzato
+apply_custom_style()
 
 # 📌 Stato sessione
 if "logged_in" not in st.session_state:
@@ -27,15 +24,22 @@ if not st.session_state.logged_in:
         if success:
             st.session_state.logged_in = True
             st.session_state.role = role
-            st.switch_page("pages/1_Registrazione.py")
+
+            # 🔁 Reindirizza in base al ruolo
+            if role.lower() == "bionic":
+                st.switch_page("pages/2_Persona_Model.py")
+            else:
+                st.switch_page("pages/1_Registrazione.py")
         else:
             st.error("❌ Credenziali non valide")
 
-# 🔓 Logout
+# 🔓 Logout + Ruolo nella sidebar
 if st.session_state.logged_in:
-    if st.button("🔓 Logout"):
-        st.session_state.logged_in = False
-        st.session_state.role = None
-        st.rerun()
+    with st.sidebar:
+        st.markdown(f"👤 **Ruolo attuale:** `{st.session_state.role}`")
+        if st.button("🔓 Logout"):
+            st.session_state.logged_in = False
+            st.session_state.role = None
+            st.rerun()
 
 
