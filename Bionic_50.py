@@ -4,7 +4,7 @@ from utils.auth import check_login
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 🌟 Stile mobile: pulsanti grandi, padding, layout compatto
+# 🌟 Mobile-friendly style
 st.markdown("""
     <style>
     .stButton button {
@@ -38,7 +38,6 @@ def set_background(image_path):
         unsafe_allow_html=True
     )
 
-# Imposta sfondo
 set_background("assets/bg.jpg")
 
 # 📌 Stato sessione
@@ -58,11 +57,12 @@ if not st.session_state.logged_in:
         if success:
             st.session_state.logged_in = True
             st.session_state.role = role
-            st.experimental_rerun()
+            st.experimental_rerun()  # forza ricaricamento
+            st.stop()  # buona pratica per evitare esecuzioni residue
         else:
             st.error("❌ Credenziali non valide")
 
-# ✅ Navigazione dopo login
+# ✅ Dopo login: menu mobile-friendly
 if st.session_state.logged_in:
     ruolo = st.session_state.role
     st.success(f"✅ Login effettuato come **{ruolo}**")
@@ -97,6 +97,5 @@ if st.session_state.logged_in:
     if st.button("🔓 Logout"):
         st.session_state.logged_in = False
         st.session_state.role = None
-        st.stop() 
-
-
+        st.experimental_rerun()
+        st.stop()
