@@ -1,67 +1,47 @@
 import streamlit as st
 import base64
 
-# ✅ Funzione per salvataggio su Google Sheets (disattivata per ora)
-def salva_su_google_sheet(dati_dict):
-    try:
-        import pandas as pd
-        from streamlit_gsheets import GSheetsConnection
+# ✅ Funzione per convertire l'immagine in base64
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        sheet_df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit")
-        nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_dict])], ignore_index=True)
-        conn.update(nuovo_df)
-    except Exception as e:
-        st.warning("⚠️ Errore durante il salvataggio su Google Sheets.")
-        st.text(f"Dettaglio: {e}")
-
-# ✅ Blocca accesso se non loggato
-if "logged_in" not in st.session_state or not st.session_state.logged_in:
-    st.error("❌ Accesso negato. Torna alla pagina principale.")
-    st.stop()
-
-# ✅ Configurazione base
-st.set_page_config(page_title="Bionic 4.0 - Home", layout="wide")
-
-# ✅ CSS: sfondo intorno al box, form leggibile
-st.markdown("""
+# ✅ Imposta l'immagine di sfondo con overlay
+def set_background(png_file):
+    bin_str = get_base64_of_bin_file(png_file)
+    page_bg_img = f'''
     <style>
-    body, .stApp {
-        background-color: transparent;
-    }
-
-    .custom-bg {
-        background-image: url("https://raw.githubusercontent.com/JAPO-cyber/BionicLandscape_4.0/main/assets/bg.jpg");
+    .stApp {{
+        background-image: url("data:image/png;base64,{bin_str}");
         background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        padding: 3rem 1rem;
-        min-height: 100vh;
-    }
-
-    .form-container {
-        background-color: rgba(255, 255, 255, 0.95);
-        padding: 2rem;
-        border-radius: 20px;
-        max-width: 900px;
-        margin: auto;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .stButton button {
+        position: relative;
+    }}
+    .overlay {{
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        padding: 1rem;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-        border-radius: 10px;
-    }
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.6);
+        z-index: 0;
+    }}
+    .main-content {{
+        position: relative;
+        z-index: 1;
+    }}
     </style>
-""", unsafe_allow_html=True)
+    '''
+    st.markdown(page_bg_img, unsafe_allow_html=True)
 
-# ✅ Inizio contenuto
-st.markdown('<div class="custom-bg">', unsafe_allow_html=True)
-st.markdown('<div class="form-container">', unsafe_allow_html=True)
+# ✅ Imposta l'immagine di sfondo
+set_background('assets/bg.jpg')  # Assicurati che il percorso sia corretto
 
+# ✅ Inizio del contenuto principale
+st.markdown('<div class="overlay"></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
+
+# ✅ Contenuto della pagina
 st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
 st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
@@ -133,9 +113,6 @@ with st.form("user_info_form"):
 
     submitted = st.form_submit_button("Invia")
 
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
 # ✅ Dopo l'invio
 if submitted:
     dati_utente = {
@@ -166,5 +143,8 @@ if submitted:
 
     st.markdown("---")
     st.page_link("pages/2_Persona_Model.py", label="➡️ Vai a Persona Model", icon="👤")
+
+# ✅ Fine del contenuto principale
+st.markdown('</div>', unsafe_allow_html=True)
 
 
