@@ -3,63 +3,88 @@ import streamlit as st
 def apply_custom_style():
     st.markdown("""
         <style>
-        /* 🌄 Sfondo dell'app */
+        /* 🌄 Sfondo generale */
         .stApp {
             background-image: url("https://raw.githubusercontent.com/JAPO-cyber/BionicLandscape_4.0/main/assets/bg.jpg");
             background-size: cover;
             background-attachment: fixed;
             background-repeat: no-repeat;
             background-position: center;
-            color: #111111; /* testo principale molto scuro */
+            color: #f5f5f5 !important;  /* testo chiaro globale */
         }
 
-        /* ✅ Input testuale visibile */
-        input, textarea {
-            background-color: #ffffff !important;  /* bianco pieno */
-            color: #111111 !important;             /* testo scuro */
-            font-weight: 500;
+        /* 🧱 Sfondo per tutte le card/box/area centrale */
+        .block-container {
+            background-color: rgba(0, 0, 0, 0.85);  /* sfondo nero semi-opaco */
+            border-radius: 15px;
+            padding: 2rem 1rem 4rem 1rem;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
         }
 
-        /* ✅ Etichette e placeholder */
-        label, .css-1cpxqw2 {  /* classi dinamiche Streamlit per etichette */
-            color: #111111 !important;
+        /* ✍️ Input testo, select, textarea, slider */
+        input, textarea, select {
+            background-color: #111 !important;
+            color: #f5f5f5 !important;
+            border: 1px solid #444 !important;
+        }
+
+        /* 📑 Placeholder */
+        ::placeholder {
+            color: #aaa !important;
+        }
+
+        /* 🏷️ Etichette (label) */
+        label, .css-1cpxqw2 {
+            color: #f5f5f5 !important;
             font-weight: 600;
         }
 
-        /* ✅ Pulsanti ben visibili */
+        /* 🎛️ Radio e Checkbox */
+        .stRadio, .stCheckbox, .stSelectbox {
+            background-color: transparent !important;
+            color: #f5f5f5 !important;
+        }
+
+        /* 🎚️ Slider: colore chiaro */
+        .stSlider > div[data-baseweb="slider"] {
+            background-color: #444;
+        }
+
+        /* 🔘 Pulsanti */
         .stButton button {
             width: 100%;
             padding: 1rem;
             font-size: 1.1rem;
             border-radius: 10px;
             margin-top: 1rem;
-            background-color: #2B7A78 !important;   /* verde acqua */
+            background-color: #2B7A78 !important;
             color: white !important;
             font-weight: bold;
             border: none;
         }
 
         .stButton button:hover {
-            background-color: #20504f !important;   /* hover più scuro */
+            background-color: #20504f !important;
             transition: background-color 0.3s ease;
         }
 
-        /* ✅ Titolo centrale opzionale */
-        .header {
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: #17252A;
-        }
-
-        /* 📱 Responsive */
+        /* 📱 Mobile */
         @media only screen and (max-width: 600px) {
             .stButton button {
                 font-size: 1rem;
                 padding: 0.8rem;
             }
         }
+
+        /* 🏷️ Header centrale */
+        .header {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+        }
         </style>
     """, unsafe_allow_html=True)
+
 
