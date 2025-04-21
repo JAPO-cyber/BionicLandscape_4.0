@@ -1,23 +1,49 @@
 import streamlit as st
+import base64
 
-# ✅ Funzione per salvataggio su Google Sheets
-def salva_su_google_sheet(dati_dict):
-    try:
-        import pandas as pd
-        from streamlit_gsheets import GSheetsConnection
+# ✅ Configurazione pagina
+st.set_page_config(page_title="Bionic 4.0 - Home", layout="wide")
 
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        sheet_df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit")
-        nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_dict])], ignore_index=True)
-        conn.update(nuovo_df)
-    except Exception as e:
-        st.warning("⚠️ Errore durante il salvataggio su Google Sheets.")
-        st.text(f"Dettaglio: {e}")
-
-# ✅ Blocca accesso se non loggato
+# ✅ Blocco accesso se non loggato
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.error("❌ Accesso negato. Torna alla pagina principale.")
-    st.stop()
+    st.switch_page("Bionic_50.py")
+
+# 🌟 Stile mobile-friendly
+st.markdown("""
+    <style>
+    .stButton button {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 10px;
+    }
+    .block-container {
+        padding: 1rem 1rem 2rem 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 🎨 Sfondo personalizzato
+def set_background(image_path):
+    with open(image_path, "rb") as img_file:
+        bg_image = base64.b64encode(img_file.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpg;base64,{bg_image}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+set_background("assets/bg.jpg")
 
 # ✅ Contenuto della pagina
 st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
@@ -122,3 +148,11 @@ if submitted:
     # ✅ Link alla prossima pagina
     st.markdown("---")
     st.page_link("pages/2_Persona_Model.py", label="➡️ Vai a Persona Model", icon="👤")
+
+# 🔓 Logout
+st.markdown("---")
+if st.button("🔓 Logout"):
+    st.session_state.logged_in = False
+    st.session_state.role = None
+    st.switch_page("Bionic_50.py")
+
