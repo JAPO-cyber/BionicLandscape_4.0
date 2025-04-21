@@ -4,16 +4,6 @@ from utils.auth import check_login  # check_login restituisce (success, role)
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 🔒 Nascondi menu laterale e footer (compatibile con nuove versioni)
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    [data-testid="collapsedControl"] {display: none;}
-    </style>
-""", unsafe_allow_html=True)
-
 # 🌄 Funzione per impostare lo sfondo
 def set_background(image_path):
     with open(image_path, "rb") as img_file:
