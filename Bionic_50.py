@@ -57,7 +57,7 @@ if not st.session_state.logged_in:
         if success:
             st.session_state.logged_in = True
             st.session_state.role = role
-            st.switch_page("pages/1_Home.py")  # ✅ Reindirizza direttamente alla pagina Home
+            st.switch_page("pages/1_Registrazione.py")  # ✅ Reindirizza direttamente alla pagina Home
         else:
             st.error("❌ Credenziali non valide")
 
