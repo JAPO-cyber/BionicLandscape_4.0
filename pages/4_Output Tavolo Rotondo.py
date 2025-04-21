@@ -60,7 +60,7 @@ def genera_matrice_ahp_random():
     matrix = np.ones((n, n))
     for i in range(n):
         for j in range(i+1, n):
-            valore = random.choice(scala_valori)
+            valore = random.choice(scalavalori)
             matrix[i, j] = valore
             matrix[j, i] = 1 / valore
     return matrix
@@ -141,14 +141,27 @@ st.dataframe(media_cluster)
 # 6. VISUALIZZAZIONI INTERATTIVE
 # -------------------------------
 st.subheader("📊 Grafico Interattivo - Pesi AHP")
+st.markdown("""
+Questo grafico a barre mostra l'importanza relativa percepita di ciascun elemento del verde urbano secondo la media aggregata dei partecipanti. 
+Ogni barra rappresenta un elemento, e la sua altezza indica quanto è considerato prioritario rispetto agli altri.
+""")
 fig = px.bar(weights_df, x="Elemento", y="Peso Aggregato", title="Pesi AHP Aggregati", text_auto=True)
 st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("🧪 Distribuzione Consistency Ratio (CR)")
+st.markdown("""
+L'istogramma mostra la distribuzione del Consistency Ratio (CR) tra i partecipanti. 
+Il CR misura la coerenza nelle risposte AHP: valori inferiori a 0.10 indicano giudizi coerenti, mentre valori superiori suggeriscono possibili incoerenze nelle valutazioni.
+""")
 fig2 = px.histogram(cluster_df, x="CR", nbins=10, title="Distribuzione del Consistency Ratio (CR)")
 st.plotly_chart(fig2, use_container_width=True)
 
 st.subheader("🎯 Cluster Interattivi")
+st.markdown("""
+Questo scatter plot interattivo visualizza i partecipanti raggruppati in cluster basati sulle loro percezioni del verde urbano. 
+Ogni punto rappresenta un partecipante, colorato in base al cluster di appartenenza. 
+Passando il cursore su un punto, puoi visualizzare dettagli come ID, ruolo, età, zona e CR.
+""")
 fig3 = px.scatter(cluster_df, x=elementi_verde[0], y=elementi_verde[1],
                   color="Cluster", hover_data=["ID", "Ruolo", "Età", "Zona", "CR"])
 st.plotly_chart(fig3, use_container_width=True)
@@ -170,5 +183,4 @@ st.download_button(
     file_name="ahp_tavolo_rotondo_risultati.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
-
 
