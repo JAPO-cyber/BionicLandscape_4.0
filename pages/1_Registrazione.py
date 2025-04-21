@@ -1,9 +1,10 @@
 import streamlit as st
+import gspread
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
 import datetime
+from oauth2client.service_account import ServiceAccountCredentials
 
-# ✅ Configurazione pagina
+# ✅ Configura Streamlit
 st.set_page_config(page_title="Bionic 4.0 - Registrazione", layout="wide")
 
 # ✅ Blocca accesso se non loggato
@@ -21,7 +22,6 @@ st.markdown("""
         background-repeat: no-repeat;
         background-position: center;
     }
-
     .stButton button {
         width: 100%;
         padding: 1rem;
@@ -29,7 +29,6 @@ st.markdown("""
         border-radius: 10px;
         margin-top: 1rem;
     }
-
     .block-container {
         padding: 2rem 1rem 4rem 1rem;
     }
@@ -40,7 +39,7 @@ st.markdown("""
 st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
 st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
-# ✅ FORM con tutti i campi obbligatori (tranne formazione)
+# ✅ FORM
 with st.form("user_info_form"):
     tavola_rotonda = st.selectbox("🔘 Tavola rotonda", [
         "Digitale e città", "Transizione ecologica", "Spazi pubblici e comunità",
@@ -73,10 +72,10 @@ with st.form("user_info_form"):
 
     submitted = st.form_submit_button("Invia")
 
-# ✅ Dopo invio: validazione e salvataggio
+# ✅ Dopo invio
 if submitted:
     if not all([nome, professione, ruolo, ambito, motivazione, obiettivo, valori]):
-        st.error("⚠️ Per favore compila tutti i campi obbligatori prima di procedere.")
+        st.error("⚠️ Compila tutti i campi obbligatori.")
     else:
         dati_utente = {
             "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -98,22 +97,23 @@ if submitted:
             "Canale preferito": canale
         }
 
+        # ✅ Salvataggio con gspread
         try:
-            conn = st.connection("gsheets", type=GSheetsConnection)
-            sheet_df = conn.read(
-                spreadsheet="https://docs.google.com/spreadsheets/d/1tmrKLNacl_Uegbo0VAS5MnhyAHmSYwCyX8GeHZycoos/edit",
-                worksheet="Partecipanti"
-            )
-            nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_utente])], ignore_index=True)
-            conn.update(nuovo_df)
-            st.success("✅ Dati salvati con successo!")
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+            creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+            client = gspread.authorize(creds)
 
-            # 🔁 Vai direttamente alla pagina successiva
+            sheet = client.open_by_key("1tmrKLNacl_Uegbo0VAS5MnhyAHmSYwCyX8GeHZycoos")
+            worksheet = sheet.worksheet("Partecipanti")
+            worksheet.append_row(list(dati_utente.values()))
+
+            st.success("✅ Dati salvati con successo!")
             st.switch_page("pages/2_Persona_Model.py")
 
         except Exception as e:
             st.error("❌ Errore durante il salvataggio dei dati.")
             st.text(f"Dettaglio: {e}")
+
 
 
 
