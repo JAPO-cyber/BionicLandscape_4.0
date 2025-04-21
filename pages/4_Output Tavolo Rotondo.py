@@ -60,7 +60,7 @@ def genera_matrice_ahp_random():
     matrix = np.ones((n, n))
     for i in range(n):
         for j in range(i+1, n):
-            valore = random.choice(scalavalori)
+            valore = random.choice(scala_valori)
             matrix[i, j] = valore
             matrix[j, i] = 1 / valore
     return matrix
