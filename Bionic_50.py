@@ -4,7 +4,7 @@ from utils.auth import check_login
 
 st.set_page_config(page_title="Bionic 4.0", layout="wide")
 
-# 🌟 Ottimizzazione mobile: pulsanti grandi e layout full width
+# 🌟 Stile mobile: pulsanti grandi, padding, layout compatto
 st.markdown("""
     <style>
     .stButton button {
@@ -38,6 +38,7 @@ def set_background(image_path):
         unsafe_allow_html=True
     )
 
+# Imposta sfondo
 set_background("assets/bg.jpg")
 
 # 📌 Stato sessione
@@ -61,7 +62,7 @@ if not st.session_state.logged_in:
         else:
             st.error("❌ Credenziali non valide")
 
-# ✅ Navigazione per ruolo
+# ✅ Navigazione dopo login
 if st.session_state.logged_in:
     ruolo = st.session_state.role
     st.success(f"✅ Login effettuato come **{ruolo}**")
@@ -79,18 +80,18 @@ if st.session_state.logged_in:
         )
 
     if ruolo == "bionic":
-        mobile_link("pages/1_Home", "🏠 Home")
-        mobile_link("pages/2_Persona Model", "👤 Persona Model")
-        mobile_link("pages/3_Percezione Cittadino", "🧠 Percezione Cittadino")
-        mobile_link("pages/4_Output Tavolo Rotondo", "🗣️ Output Tavolo Rotondo")
-        mobile_link("pages/5_Valutazione Parchi", "🏞️ Valutazione Parchi")
-        mobile_link("pages/6_Output Analisi", "📊 Analisi Finale")
-        mobile_link("pages/7_Generazione Report", "📝 Generazione Report")
+        mobile_link("pages/1_Home.py", "🏠 Home")
+        mobile_link("pages/2_Persona_Model.py", "👤 Persona Model")
+        mobile_link("pages/3_Percezione_Cittadino.py", "🧠 Percezione Cittadino")
+        mobile_link("pages/4_Output_Tavolo_Rotondo.py", "🗣️ Output Tavolo Rotondo")
+        mobile_link("pages/5_Valutazione_Parchi.py", "🏞️ Valutazione Parchi")
+        mobile_link("pages/6_Output_Analisi.py", "📊 Analisi Finale")
+        mobile_link("pages/7_Generazione_Report.py", "📝 Generazione Report")
 
     elif ruolo == "responsabile":
-        mobile_link("pages/1_Home", "🏠 Home")
-        mobile_link("pages/3_Percezione Cittadino", "🧠 Percezione Cittadino")
-        mobile_link("pages/5_Valutazione Parchi", "🏞️ Valutazione Parchi")
+        mobile_link("pages/1_Home.py", "🏠 Home")
+        mobile_link("pages/3_Percezione_Cittadino.py", "🧠 Percezione Cittadino")
+        mobile_link("pages/5_Valutazione_Parchi.py", "🏞️ Valutazione Parchi")
 
     # 🔓 Logout
     if st.button("🔓 Logout"):
