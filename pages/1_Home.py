@@ -2,13 +2,17 @@ import streamlit as st
 
 # Funzione per salvataggio su Google Sheets (pronta da usare)
 def salva_su_google_sheet(dati_dict):
-    import pandas as pd
-    from streamlit_gsheets import GSheetsConnection
+    try:
+        import pandas as pd
+        from streamlit_gsheets import GSheetsConnection
 
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    sheet_df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit")
-    nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_dict])], ignore_index=True)
-    conn.update(nuovo_df)
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        sheet_df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit")
+        nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_dict])], ignore_index=True)
+        conn.update(nuovo_df)
+    except Exception as e:
+        st.warning("⚠️ Errore durante il salvataggio su Google Sheets.")
+        st.text(f"Dettaglio: {e}")
 
 
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
