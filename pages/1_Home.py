@@ -1,5 +1,16 @@
 import streamlit as st
 
+# Funzione per salvataggio su Google Sheets (pronta da usare)
+def salva_su_google_sheet(dati_dict):
+    import pandas as pd
+    from streamlit_gsheets import GSheetsConnection
+
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    sheet_df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit")
+    nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_dict])], ignore_index=True)
+    conn.update(nuovo_df)
+
+
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.error("Accesso negato. Torna alla pagina principale.")
     st.stop()
@@ -9,7 +20,6 @@ st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:
 
 with st.form("user_info_form"):
 
-    # 1. Tavola rotonda
     tavola_rotonda = st.selectbox(
         "🔘 Tavola rotonda",
         [
@@ -21,25 +31,21 @@ with st.form("user_info_form"):
         ]
     )
     
-    # 2. Identità e ruolo
     nome = st.text_input("👤 Nome")
     eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
     professione = st.text_input("💼 Professione")
-    
     ruolo = st.selectbox(
         "🎭 Qual è il tuo ruolo in questo progetto?",
         ["Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"]
     )
-    
     formazione = st.text_input("🎓 Formazione o background (facoltativo)", placeholder="Esempio: Architettura, Economia, Informatica...")
 
-    # 3. Ambito e motivazioni
     ambito = st.selectbox(
         "🌱 Qual è il tuo principale ambito di interesse?",
         ["Urbanistica", "Tecnologia e digitale", "Transizione ecologica", 
          "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"]
     )
-    
+
     esperienza = st.radio(
         "🧭 Hai già partecipato ad altri progetti partecipativi?",
         ["Sì", "No"]
@@ -82,23 +88,31 @@ with st.form("user_info_form"):
 
     submitted = st.form_submit_button("Invia")
 
-# Risultato
 if submitted:
+    dati_utente = {
+        "Tavola rotonda": tavola_rotonda,
+        "Nome": nome,
+        "Età": eta,
+        "Professione": professione,
+        "Formazione": formazione,
+        "Ruolo": ruolo,
+        "Ambito": ambito,
+        "Esperienza": esperienza,
+        "Coinvolgimento": coinvolgimento,
+        "Conoscenza tema": conoscenza,
+        "Motivazione": motivazione,
+        "Obiettivo": obiettivo,
+        "Visione": visione,
+        "Valori": ", ".join(valori),
+        "Canale preferito": canale
+    }
+
+    # 🔐 Salvataggio su Google Sheet - attiva quando sei pronto
+    # salva_su_google_sheet(dati_utente)
+
     st.success("✅ Grazie per aver inviato le tue informazioni!")
 
     st.markdown("### 📊 Dati raccolti:")
-    st.write(f"🧩 **Tavola rotonda**: {tavola_rotonda}")
-    st.write(f"👤 **Nome**: {nome}")
-    st.write(f"🎂 **Età**: {eta}")
-    st.write(f"💼 **Professione**: {professione}")
-    st.write(f"🎓 **Formazione**: {formazione}")
-    st.write(f"🎭 **Ruolo**: {ruolo}")
-    st.write(f"🌱 **Ambito di interesse**: {ambito}")
-    st.write(f"🧭 **Esperienza pregressa**: {esperienza}")
-    st.write(f"📍 **Coinvolgimento nel territorio**: {coinvolgimento}/10")
-    st.write(f"📚 **Conoscenza del tema**: {conoscenza}/10")
-    st.write(f"🗣️ **Motivazione**: {motivazione}")
-    st.write(f"🎯 **Obiettivo personale**: {obiettivo}")
-    st.write(f"🔍 **Visione**: {visione}")
-    st.write(f"❤️ **Valori**: {', '.join(valori)}")
-    st.write(f"📡 **Canale preferito**: {canale}")
+    for chiave, valore in dati_utente.items():
+        st.write(f"**{chiave}**: {valore}")
+
