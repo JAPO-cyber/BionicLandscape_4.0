@@ -1,17 +1,17 @@
 import streamlit as st
-import base64
-from lib.google_sheet import get_gspread_client
-from datetime import datetime
+import pandas as pd
+from streamlit_gsheets import GSheetsConnection
+import datetime
+
+# ✅ Configurazione pagina
+st.set_page_config(page_title="Bionic 4.0 - Registrazione", layout="wide")
 
 # ✅ Blocca accesso se non loggato
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.error("❌ Accesso negato. Torna alla pagina principale.")
     st.stop()
 
-# ✅ Configurazione base
-st.set_page_config(page_title="Bionic 4.0 - Registrazione", layout="wide")
-
-# ✅ Stile globale
+# ✅ Stile con immagine di sfondo leggibile
 st.markdown("""
     <style>
     .stApp {
@@ -20,15 +20,6 @@ st.markdown("""
         background-attachment: fixed;
         background-repeat: no-repeat;
         background-position: center;
-    }
-
-    .form-container {
-        background-color: rgba(255, 255, 255, 0.94);
-        padding: 2rem;
-        border-radius: 15px;
-        max-width: 900px;
-        margin: 2rem auto;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .stButton button {
@@ -40,96 +31,56 @@ st.markdown("""
     }
 
     .block-container {
-        padding: 0rem 0.5rem 2rem 0.5rem;
+        padding: 2rem 1rem 4rem 1rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# ✅ Contenitore visivo del form
-st.markdown('<div class="form-container">', unsafe_allow_html=True)
+# ✅ Titolo
+st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
+st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
-st.title("🏠 Registrazione al workshop Bionic 4.0")
-st.markdown("### 📝 Inserisci le tue informazioni per partecipare:")
-
+# ✅ FORM con tutti i campi obbligatori (tranne formazione)
 with st.form("user_info_form"):
-    tavola_rotonda = st.selectbox(
-        "🔘 Tavola rotonda",
-        [
-            "Digitale e città",
-            "Transizione ecologica",
-            "Spazi pubblici e comunità",
-            "Futuro del lavoro",
-            "Cultura e creatività",
-        ]
-    )
+    tavola_rotonda = st.selectbox("🔘 Tavola rotonda", [
+        "Digitale e città", "Transizione ecologica", "Spazi pubblici e comunità",
+        "Futuro del lavoro", "Cultura e creatività"
+    ])
     nome = st.text_input("👤 Nome")
     eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
     professione = st.text_input("💼 Professione")
-    ruolo = st.selectbox(
-        "🎭 Qual è il tuo ruolo in questo progetto?",
-        ["Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"]
-    )
+    ruolo = st.selectbox("🎭 Qual è il tuo ruolo in questo progetto?", [
+        "Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"
+    ])
     formazione = st.text_input("🎓 Formazione o background (facoltativo)", placeholder="Esempio: Architettura, Economia, Informatica...")
 
-    ambito = st.selectbox(
-        "🌱 Qual è il tuo principale ambito di interesse?",
-        ["Urbanistica", "Tecnologia e digitale", "Transizione ecologica", 
-         "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"]
-    )
-
-    esperienza = st.radio(
-        "🧭 Hai già partecipato ad altri progetti partecipativi?",
-        ["Sì", "No"]
-    )
-
-    coinvolgimento = st.slider(
-        "📍 Quanto ti senti coinvolto/a nella vita del tuo territorio?",
-        0, 10, 5
-    )
-
-    conoscenza = st.slider(
-        "📚 Quanto conosci il tema di questa tavola rotonda?",
-        0, 10, 5
-    )
-
-    motivazione = st.text_area(
-        "🗣️ Cosa ti ha spinto a partecipare a questo tavolo di lavoro?",
-        placeholder="Scrivi liberamente..."
-    )
-
-    obiettivo = st.text_area(
-        "🎯 Cosa ti piacerebbe ottenere da questo incontro?",
-        placeholder="Ad esempio: conoscere persone, contribuire a un'idea, essere aggiornato..."
-    )
-
-    visione = st.radio(
-        "🔍 Ti senti più orientato a...",
-        ["Valori tradizionali", "Innovazione", "Equilibrio tra i due"]
-    )
-
-    valori = st.multiselect(
-        "❤️ Quali di questi valori senti più vicini?",
-        ["Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione"]
-    )
-
-    canale = st.selectbox(
-        "📡 Come preferisci essere aggiornato su iniziative pubbliche?",
-        ["Email", "Social", "Eventi pubblici", "Siti ufficiali", "Bacheche locali"]
-    )
+    ambito = st.selectbox("🌱 Qual è il tuo principale ambito di interesse?", [
+        "Urbanistica", "Tecnologia e digitale", "Transizione ecologica",
+        "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"
+    ])
+    esperienza = st.radio("🧭 Hai già partecipato ad altri progetti partecipativi?", ["Sì", "No"])
+    coinvolgimento = st.slider("📍 Quanto ti senti coinvolto/a nella vita del tuo territorio?", 0, 10, 5)
+    conoscenza = st.slider("📚 Quanto conosci il tema di questa tavola rotonda?", 0, 10, 5)
+    motivazione = st.text_area("🗣️ Cosa ti ha spinto a partecipare a questo tavolo di lavoro?", placeholder="Scrivi liberamente...")
+    obiettivo = st.text_area("🎯 Cosa ti piacerebbe ottenere da questo incontro?", placeholder="Ad esempio: conoscere persone, contribuire a un'idea, essere aggiornato...")
+    visione = st.radio("🔍 Ti senti più orientato a...", ["Valori tradizionali", "Innovazione", "Equilibrio tra i due"])
+    valori = st.multiselect("❤️ Quali di questi valori senti più vicini?", [
+        "Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione"
+    ])
+    canale = st.selectbox("📡 Come preferisci essere aggiornato su iniziative pubbliche?", [
+        "Email", "Social", "Eventi pubblici", "Siti ufficiali", "Bacheche locali"
+    ])
 
     submitted = st.form_submit_button("Invia")
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ✅ Dopo l'invio
+# ✅ Dopo invio: validazione e salvataggio
 if submitted:
-    try:
-        client = get_gspread_client()
-        sheet = client.open("Dati_Partecipanti").worksheet("Partecipanti")
-
+    if not all([nome, professione, ruolo, ambito, motivazione, obiettivo, valori]):
+        st.error("⚠️ Per favore compila tutti i campi obbligatori prima di procedere.")
+    else:
         dati_utente = {
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Utente": st.session_state.get("utente", "Anonimo"),
+            "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Utente": st.session_state.get("username", "anonimo"),
             "Tavola rotonda": tavola_rotonda,
             "Nome": nome,
             "Età": eta,
@@ -147,19 +98,22 @@ if submitted:
             "Canale preferito": canale
         }
 
-        riga = list(dati_utente.values())
-        sheet.append_row(riga)
+        try:
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            sheet_df = conn.read(
+                spreadsheet="https://docs.google.com/spreadsheets/d/1tmrKLNacl_Uegbo0VAS5MnhyAHmSYwCyX8GeHZycoos/edit",
+                worksheet="Partecipanti"
+            )
+            nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_utente])], ignore_index=True)
+            conn.update(nuovo_df)
+            st.success("✅ Dati salvati con successo!")
 
-        st.success("✅ Grazie per aver inviato le tue informazioni!")
-        st.markdown("### 📊 Dati raccolti:")
-        for chiave, valore in dati_utente.items():
-            st.write(f"**{chiave}**: {valore}")
+            # 🔁 Vai direttamente alla pagina successiva
+            st.switch_page("pages/2_Persona_Model.py")
 
-        st.markdown("---")
-        st.page_link("pages/2_Persona_Model.py", label="➡️ Vai a Persona Model", icon="👤")
+        except Exception as e:
+            st.error("❌ Errore durante il salvataggio dei dati.")
+            st.text(f"Dettaglio: {e}")
 
-    except Exception as e:
-        st.warning("⚠️ Errore durante il salvataggio.")
-        st.text(f"Dettaglio: {e}")
 
 
