@@ -1,19 +1,7 @@
 import streamlit as st
 import base64
-
-# ✅ Funzione per salvataggio su Google Sheets (disattivata per ora)
-def salva_su_google_sheet(dati_dict):
-    try:
-        import pandas as pd
-        from streamlit_gsheets import GSheetsConnection
-
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        sheet_df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit")
-        nuovo_df = pd.concat([sheet_df, pd.DataFrame([dati_dict])], ignore_index=True)
-        conn.update(nuovo_df)
-    except Exception as e:
-        st.warning("⚠️ Errore durante il salvataggio su Google Sheets.")
-        st.text(f"Dettaglio: {e}")
+from lib.google_sheet import get_gspread_client
+from datetime import datetime
 
 # ✅ Blocca accesso se non loggato
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
@@ -21,9 +9,9 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.stop()
 
 # ✅ Configurazione base
-st.set_page_config(page_title="Bionic 4.0 - Home", layout="wide")
+st.set_page_config(page_title="Bionic 4.0 - Registrazione", layout="wide")
 
-# ✅ Stile globale + immagine di sfondo + box form leggibile
+# ✅ Stile globale
 st.markdown("""
     <style>
     .stApp {
@@ -52,7 +40,7 @@ st.markdown("""
     }
 
     .block-container {
-        padding: 2rem 1rem 4rem 1rem;
+        padding: 0rem 0.5rem 2rem 0.5rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -60,8 +48,8 @@ st.markdown("""
 # ✅ Contenitore visivo del form
 st.markdown('<div class="form-container">', unsafe_allow_html=True)
 
-st.title("🏠 Benvenuto nella dashboard di Bionic 4.0")
-st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
+st.title("🏠 Registrazione al workshop Bionic 4.0")
+st.markdown("### 📝 Inserisci le tue informazioni per partecipare:")
 
 with st.form("user_info_form"):
     tavola_rotonda = st.selectbox(
@@ -135,33 +123,43 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # ✅ Dopo l'invio
 if submitted:
-    dati_utente = {
-        "Tavola rotonda": tavola_rotonda,
-        "Nome": nome,
-        "Età": eta,
-        "Professione": professione,
-        "Formazione": formazione,
-        "Ruolo": ruolo,
-        "Ambito": ambito,
-        "Esperienza": esperienza,
-        "Coinvolgimento": coinvolgimento,
-        "Conoscenza tema": conoscenza,
-        "Motivazione": motivazione,
-        "Obiettivo": obiettivo,
-        "Visione": visione,
-        "Valori": ", ".join(valori),
-        "Canale preferito": canale
-    }
+    try:
+        client = get_gspread_client()
+        sheet = client.open("Dati_Partecipanti").worksheet("Partecipanti")
 
-    # salva_su_google_sheet(dati_utente)  # Attiva quando pronto
+        dati_utente = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Utente": st.session_state.get("utente", "Anonimo"),
+            "Tavola rotonda": tavola_rotonda,
+            "Nome": nome,
+            "Età": eta,
+            "Professione": professione,
+            "Formazione": formazione,
+            "Ruolo": ruolo,
+            "Ambito": ambito,
+            "Esperienza": esperienza,
+            "Coinvolgimento": coinvolgimento,
+            "Conoscenza tema": conoscenza,
+            "Motivazione": motivazione,
+            "Obiettivo": obiettivo,
+            "Visione": visione,
+            "Valori": ", ".join(valori),
+            "Canale preferito": canale
+        }
 
-    st.success("✅ Grazie per aver inviato le tue informazioni!")
+        riga = list(dati_utente.values())
+        sheet.append_row(riga)
 
-    st.markdown("### 📊 Dati raccolti:")
-    for chiave, valore in dati_utente.items():
-        st.write(f"**{chiave}**: {valore}")
+        st.success("✅ Grazie per aver inviato le tue informazioni!")
+        st.markdown("### 📊 Dati raccolti:")
+        for chiave, valore in dati_utente.items():
+            st.write(f"**{chiave}**: {valore}")
 
-    st.markdown("---")
-    st.page_link("pages/2_Persona_Model.py", label="➡️ Vai a Persona Model", icon="👤")
+        st.markdown("---")
+        st.page_link("pages/2_Persona_Model.py", label="➡️ Vai a Persona Model", icon="👤")
+
+    except Exception as e:
+        st.warning("⚠️ Errore durante il salvataggio.")
+        st.text(f"Dettaglio: {e}")
 
 
