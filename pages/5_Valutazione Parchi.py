@@ -68,26 +68,32 @@ n_votati = len(st.session_state["valutazioni_parchi"])
 n_totale = len(parchi)
 st.markdown(f"### Parchi valutati: {n_votati} su {n_totale}")
 
-# Lista parchi ancora da votare
-parchi_non_votati = [p['nome'] for p in parchi if p['nome'] not in st.session_state["valutazioni_parchi"]]
+# Elenco dei parchi con possibilità di modifica
+parchi_non_valutati = [p['nome'] for p in parchi if p['nome'] not in st.session_state["valutazioni_parchi"]]
+parchi_valutati = list(st.session_state["valutazioni_parchi"].keys())
 
-if parchi_non_votati:
-    st.subheader("\U0001F4DD Valuta ciascun parco")
-    parco_selezionato = st.selectbox("Seleziona un parco da valutare:", parchi_non_votati)
+scelte = parchi_non_valutati + parchi_valutati
+
+if scelte:
+    st.subheader("\U0001F4DD Valuta o modifica un parco")
+    parco_selezionato = st.selectbox("Seleziona un parco da valutare o modificare:", scelte)
     parco_dati = next(p for p in parchi if p['nome'] == parco_selezionato)
 
     st.markdown(f"**{parco_dati['nome']}**")
     st.markdown(f"_{parco_dati['descrizione']}_")
     st.image(parco_dati["img"], use_container_width=True)
 
-    valutazioni = {}
-    st.markdown("### Inserisci una valutazione da 1 (bassa) a 5 (alta) per ciascun criterio:")
-    for criterio in criteri:
-        valutazioni[criterio] = st.slider(f"{criterio}", 1, 5, 3)
+    valutazioni = st.session_state["valutazioni_parchi"].get(parco_selezionato, {})
 
-    if st.button("Salva valutazione per questo parco"):
-        st.session_state["valutazioni_parchi"][parco_selezionato] = valutazioni
-        st.success(f"Valutazione salvata per {parco_selezionato}!")
+    st.markdown("### Inserisci una valutazione da 1 (bassa) a 5 (alta) per ciascun criterio:")
+    nuove_valutazioni = {}
+    for criterio in criteri:
+        valore_default = valutazioni.get(criterio, 3)
+        nuove_valutazioni[criterio] = st.slider(f"{criterio}", 1, 5, valore_default)
+
+    if st.button("Salva o aggiorna valutazione per questo parco"):
+        st.session_state["valutazioni_parchi"][parco_selezionato] = nuove_valutazioni
+        st.success(f"Valutazione salvata o aggiornata per {parco_selezionato}!")
 else:
     st.success("Hai completato la valutazione di tutti i parchi. Grazie per il tuo contributo!")
 
@@ -95,5 +101,4 @@ else:
 if st.session_state["valutazioni_parchi"]:
     st.subheader("\U0001F4C8 Riepilogo delle valutazioni inserite")
     st.write(pd.DataFrame(st.session_state["valutazioni_parchi"]).T)
-
 
