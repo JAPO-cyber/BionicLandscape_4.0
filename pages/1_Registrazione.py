@@ -97,7 +97,7 @@ if submitted:
         }
 
         try:
-            sheet = get_sheet_by_name("Dati_Partecipanti")
+            sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
             sheet.append_row(list(dati_utente.values()))
             st.success("✅ Dati salvati con successo!")
             st.switch_page("pages/2_Persona_Model.py")
