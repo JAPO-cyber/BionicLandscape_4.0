@@ -97,7 +97,7 @@ if scelte:
     image_url = parco_info["Link immagine"]
     if image_url and image_url.startswith("http"):
         try:
-            st.image(image_url, use_column_width=False, width=400)
+            st.image(image_url, use_container_width=False, width=400)
         except:
             st.warning("⚠️ L'immagine non è disponibile.")
     else:
