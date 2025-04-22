@@ -42,24 +42,32 @@ except Exception as e:
     st.error("❌ Errore nel caricamento dei dati dei parchi.")
     st.stop()
 
-# ✅ Mappa dei parchi
+# ✅ Mappa dei parchi migliorata con zoom limitato e tooltip
 st.subheader("🗺️ Mappa dei parchi")
+view_state = pdk.ViewState(
+    latitude=df_parchi["Latitudine"].mean(),
+    longitude=df_parchi["Longitudine"].mean(),
+    zoom=13,
+    min_zoom=12,
+    max_zoom=15
+)
+layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=df_parchi,
+    get_position='[Longitudine, Latitudine]',
+    get_fill_color='[0, 128, 0, 160]',
+    get_radius=100,
+    pickable=True
+)
+tooltip = {
+    "html": "<b>{Nome del Parco}</b><br/>{Quartiere}",
+    "style": {"backgroundColor": "white", "color": "black"}
+}
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/light-v9',
-    initial_view_state=pdk.ViewState(
-        latitude=df_parchi["Latitudine"].mean(),
-        longitude=df_parchi["Longitudine"].mean(),
-        zoom=13
-    ),
-    layers=[
-        pdk.Layer(
-            'ScatterplotLayer',
-            data=df_parchi,
-            get_position='[Longitudine, Latitudine]',
-            get_fill_color='[0, 128, 0, 160]',
-            get_radius=100,
-        )
-    ]
+    map_style='mapbox://styles/mapbox/outdoors-v11',
+    initial_view_state=view_state,
+    layers=[layer],
+    tooltip=tooltip
 ))
 
 # ✅ Inizializza stato sessione
@@ -84,7 +92,16 @@ if scelte:
 
     st.markdown(f"**{parco_info['Nome del Parco']} - {parco_info['Quartiere']}**")
     st.markdown(f"_{parco_info['Descrizione']}_")
-    st.image(parco_info["Link immagine"], use_container_width=True)
+
+    # ✅ Immagine con gestione fallback e dimensione più comoda
+    image_url = parco_info["Link immagine"]
+    if image_url and image_url.startswith("http"):
+        try:
+            st.image(image_url, use_column_width=False, width=400)
+        except:
+            st.warning("⚠️ L'immagine non è disponibile.")
+    else:
+        st.info("ℹ️ Nessuna immagine disponibile per questo parco.")
 
     valutazioni = st.session_state["valutazioni_parchi"].get(parco_selezionato, {})
 
@@ -128,4 +145,7 @@ if st.session_state["valutazioni_parchi"]:
             st.error("❌ Errore durante il salvataggio delle valutazioni.")
             st.text(f"Dettaglio: {e}")
 
+# ✅ Link alla pagina successiva
+st.markdown("---")
+st.markdown("👉 [Vai alla pagina successiva: 6. Analisi e risultati](6_Analisi_e_Risultati)")
 
