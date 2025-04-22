@@ -1,100 +1,75 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
 import pydeck as pdk
+import plotly.graph_objects as go
+from lib.style import apply_custom_style
+from lib.google_sheet import get_sheet_by_name
 
-st.set_page_config(layout="wide")
-st.title("6. Analisi della valutazione dei parchi")
+st.set_page_config(page_title="6. Analisi e risultati", layout="wide")
+apply_custom_style()
 
-# Verifica che ci siano valutazioni salvate
-if "valutazioni_parchi" not in st.session_state or not st.session_state["valutazioni_parchi"]:
-    st.warning("Nessuna valutazione trovata. Torna alla pagina precedente per completare la valutazione dei parchi.")
+st.title("6. Analisi e visualizzazione dei risultati")
+
+# ✅ Caricamento dati
+try:
+    df_valutazioni = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Valutazione Parchi").get_all_records())
+    df_pesi = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Pesi Parametri").get_all_records())
+    df_info = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Informazioni Parchi").get_all_records())
+except Exception as e:
+    st.error("❌ Errore nel caricamento dei dati.")
     st.stop()
 
-# Recupera i dati delle valutazioni
-valutazioni_dict = st.session_state["valutazioni_parchi"]
-parchi_valutati = list(valutazioni_dict.keys())
-criteri = [c for c in list(valutazioni_dict[parchi_valutati[0]].keys()) if c != "feedback"]
-
-# Costruzione DataFrame valutazioni
-df_valutazioni = pd.DataFrame(
-    {parco: {criterio: valori[criterio] for criterio in criteri} for parco, valori in valutazioni_dict.items()}
-).T
-
-# Calcolo statistiche
-st.subheader("📊 Statistiche delle valutazioni")
-st.markdown("Media e variabilità delle valutazioni fornite per ciascun parco.")
-
-media_df = df_valutazioni.mean(axis=1).rename("Media")
-std_df = df_valutazioni.std(axis=1).rename("Deviazione Standard")
-statistiche = pd.concat([media_df, std_df], axis=1)
-st.dataframe(statistiche)
-
-# Visualizzazione
-fig = px.bar(statistiche, x=statistiche.index, y="Media", error_y="Deviazione Standard",
-             title="Valutazione media dei parchi con deviazione standard")
-st.plotly_chart(fig, use_container_width=True)
-
-# Simula pesi AHP se non disponibili
-if "ahp_weights" not in st.session_state:
-    st.warning("Non sono stati trovati i pesi AHP individuali. Verranno usati pesi simulati per il test.")
-    st.session_state["ahp_weights"] = {
-        "Accessibilità del verde": 0.2,
-        "Biodiversità": 0.25,
-        "Manutenzione e pulizia": 0.15,
-        "Funzione sociale": 0.2,
-        "Funzione ambientale": 0.2
-    }
-
-# Calcolo punteggio AHP aggregato
-st.subheader("📝 Valutazione Cittadino")
-
-ahp_pesi = st.session_state["ahp_weights"]
-vet_pesi = np.array([ahp_pesi[c] for c in criteri])
-punteggi = df_valutazioni @ vet_pesi
-
-df_finale = pd.DataFrame({
-    "Punteggio Valutazione Cittadino": punteggi,
-    "Media": media_df,
-    "Deviazione Standard": std_df
+# ✅ Definizione criteri e rinomina colonne
+criteri = [
+    "Accessibilità del verde", "Biodiversità", "Manutenzione e pulizia",
+    "Funzione sociale", "Funzione ambientale"
+]
+df_pesi = df_pesi.rename(columns={
+    "Funzione sociale (es. luoghi di incontro)": "Funzione sociale",
+    "Funzione ambientale (es. ombra, qualità aria)": "Funzione ambientale"
 })
-st.dataframe(df_finale.sort_values("Punteggio Valutazione Cittadino", ascending=False))
 
-# Commenti
-st.subheader("💬 Commenti lasciati dagli utenti")
-for parco, valutazione in valutazioni_dict.items():
-    commento = valutazione.get("feedback", "")
-    if commento:
-        st.markdown(f"**{parco}**: {commento}")
+# ✅ Sidebar: selezione vista e filtri
+with st.sidebar:
+    st.header("📊 Analisi")
+    pagina = st.radio("Seleziona vista:", ["📍 Mappa Punteggi", "📊 Classifica Parchi", "📈 Analisi Aggregata"])
 
-# Mappa con colori secondo punteggio
-st.subheader("🗺 Mappa dei parchi colorata per punteggio")
-parchi_coord = {
-    "Parco Suardi": (45.7035, 9.6783),
-    "Parco della Trucca": (45.6847, 9.6240),
-    "Parco Goisis": (45.7151, 9.6821),
-    "Parco Locatelli": (45.7080, 9.6695),
-}
+    tavole = df_valutazioni["Tavola rotonda"].dropna().unique().tolist()
+    tavola_sel = st.selectbox("🎯 Filtra per Tavola rotonda:", ["Tutte"] + tavole)
 
-map_df = pd.DataFrame([
-    {
-        "nome": parco,
-        "lat": parchi_coord[parco][0],
-        "lon": parchi_coord[parco][1],
-        "punteggio": punteggi[parco]
-    } for parco in punteggi.index if parco in parchi_coord
-])
+    quartieri = df_info["Quartiere"].dropna().unique().tolist()
+    quartiere_sel = st.selectbox("🏘️ Filtra per quartiere:", ["Tutti"] + quartieri)
 
-# Funzione per assegnare colore RGB in base al punteggio
-# 0 = rosso, 5 = giallo, >9 = verde
+    punteggio_min, punteggio_max = st.slider("🎚️ Range punteggio", 1.0, 5.0, (1.0, 5.0), 0.1)
 
+# ✅ Filtro per tavola rotonda
+df_valutazioni_f = df_valutazioni.copy()
+if tavola_sel != "Tutte":
+    df_valutazioni_f = df_valutazioni[df_valutazioni["Tavola rotonda"] == tavola_sel]
+    df_pesi = df_pesi[df_pesi["Tavola rotonda"] == tavola_sel]
+
+# ✅ Media e punteggio finale
+media_val = df_valutazioni_f.groupby("Parco")[criteri].mean().reset_index()
+pesi_dict = df_pesi[criteri].mean().to_dict()
+
+def calcola_punteggio(riga):
+    return sum(riga[c] * pesi_dict.get(c, 0) for c in criteri)
+
+media_val["punteggio"] = media_val.apply(calcola_punteggio, axis=1)
+map_df = pd.merge(media_val, df_info, left_on="Parco", right_on="Nome del Parco")
+
+# ✅ Filtri aggiuntivi
+if quartiere_sel != "Tutti":
+    map_df = map_df[map_df["Quartiere"] == quartiere_sel]
+map_df = map_df[(map_df["punteggio"] >= punteggio_min) & (map_df["punteggio"] <= punteggio_max)]
+
+# ✅ Colori per punteggio 1-5
 def punteggio_to_rgb(p):
-    if p <= 5:
+    if p <= 2:
         r = 255
-        g = int(255 * (p / 5))
-    elif p <= 9:
-        r = int(255 * (1 - (p - 5) / 4))
+        g = int(255 * (p - 1))
+    elif p <= 4:
+        r = int(255 * (1 - (p - 2) / 2))
         g = 255
     else:
         r = 0
@@ -103,30 +78,71 @@ def punteggio_to_rgb(p):
 
 map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
 
-st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/light-v9',
-    initial_view_state=pdk.ViewState(
-        latitude=45.6983,
-        longitude=9.6773,
-        zoom=13
-    ),
-    layers=[
-        pdk.Layer(
-            "ScatterplotLayer",
-            data=map_df,
-            get_position="[lon, lat]",
-            get_fill_color="color",
-            get_radius=150,
-            pickable=True
-        )
-    ],
-    tooltip={"text": "{nome}\nPunteggio: {punteggio:.2f}"}
-))
+# ✅ VISTA: MAPPA
+if pagina == "📍 Mappa Punteggi":
+    st.subheader("📍 Mappa dei parchi con punteggio finale")
+    view_state = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13, min_zoom=12, max_zoom=15)
+    st.pydeck_chart(pdk.Deck(
+        map_style='mapbox://styles/mapbox/outdoors-v11',
+        initial_view_state=view_state,
+        layers=[
+            pdk.Layer(
+                "ScatterplotLayer",
+                data=map_df,
+                get_position="[Longitudine, Latitudine]",
+                get_fill_color="color",
+                get_radius=150,
+                pickable=True
+            )
+        ],
+        tooltip={"text": "{Nome del Parco}\nPunteggio: {punteggio:.2f}"}
+    ))
+    st.markdown("""
+    ### 🟢 Legenda colori punteggio (da 1 a 5)
+    - 🔴 **Rosso**: Punteggio ≤ 2  
+    - 🟡 **Giallo**: Punteggio tra 2 e 4  
+    - 🟢 **Verde**: Punteggio > 4
+    """)
 
-# Legenda dei colori
-st.markdown("""
-### 🟢 Legenda colori punteggio
-- 🔴 **Rosso**: Punteggio ≤ 5
-- 🟡 **Giallo**: Punteggio tra 5 e 9
-- 🟢 **Verde**: Punteggio > 9
-""")
+# ✅ VISTA: CLASSIFICA
+elif pagina == "📊 Classifica Parchi":
+    st.subheader("📊 Classifica dei parchi per punteggio")
+    st.dataframe(map_df[["Nome del Parco", "Quartiere", "punteggio"]].sort_values(by="punteggio", ascending=False))
+
+# ✅ VISTA: ANALISI AGGREGATA
+elif pagina == "📈 Analisi Aggregata":
+    st.subheader("📈 Analisi media e varianza per criterio")
+    
+    # Media e varianza
+    media_criteri = df_valutazioni_f[criteri].mean().round(2)
+    var_criteri = df_valutazioni_f[criteri].var().round(2)
+
+    st.markdown("**📊 Valori medi:**")
+    st.dataframe(media_criteri.rename("Media").to_frame())
+
+    st.markdown("**📉 Varianza:**")
+    st.dataframe(var_criteri.rename("Varianza").to_frame())
+
+    # Radar chart valori medi
+    st.markdown("**📊 Radar delle valutazioni medie per criterio**")
+    radar_fig = go.Figure()
+    radar_fig.add_trace(go.Scatterpolar(
+        r=media_criteri.tolist(),
+        theta=criteri,
+        fill='toself',
+        name='Valutazioni medie'
+    ))
+    radar_fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True)
+    st.plotly_chart(radar_fig, use_container_width=True)
+
+    # Radar chart pesi AHP
+    st.markdown("**⚖️ Radar dei pesi AHP medi applicati**")
+    radar_fig2 = go.Figure()
+    radar_fig2.add_trace(go.Scatterpolar(
+        r=list(pesi_dict.values()),
+        theta=criteri,
+        fill='toself',
+        name='Pesi AHP'
+    ))
+    radar_fig2.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True)
+    st.plotly_chart(radar_fig2, use_container_width=True)
