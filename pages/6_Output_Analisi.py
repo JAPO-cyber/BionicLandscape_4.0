@@ -42,13 +42,13 @@ with st.sidebar:
 
     punteggio_min, punteggio_max = st.slider("🎚️ Range punteggio", 1.0, 5.0, (1.0, 5.0), 0.1)
 
-# ✅ Filtro per tavola rotonda
+# ✅ Filtri base
 df_valutazioni_f = df_valutazioni.copy()
 if tavola_sel != "Tutte":
     df_valutazioni_f = df_valutazioni[df_valutazioni["Tavola rotonda"] == tavola_sel]
     df_pesi = df_pesi[df_pesi["Tavola rotonda"] == tavola_sel]
 
-# ✅ Media e punteggio finale
+# ✅ Calcolo media e punteggi
 media_val = df_valutazioni_f.groupby("Parco")[criteri].mean().reset_index()
 pesi_dict = df_pesi[criteri].mean().to_dict()
 
@@ -58,12 +58,17 @@ def calcola_punteggio(riga):
 media_val["punteggio"] = media_val.apply(calcola_punteggio, axis=1)
 map_df = pd.merge(media_val, df_info, left_on="Parco", right_on="Nome del Parco")
 
-# ✅ Filtri aggiuntivi
+# ✅ Conversione lat/lon e filtro su NaN
+map_df["Latitudine"] = pd.to_numeric(map_df["Latitudine"], errors="coerce")
+map_df["Longitudine"] = pd.to_numeric(map_df["Longitudine"], errors="coerce")
+map_df = map_df.dropna(subset=["Latitudine", "Longitudine"])
+
+# ✅ Altri filtri
 if quartiere_sel != "Tutti":
     map_df = map_df[map_df["Quartiere"] == quartiere_sel]
 map_df = map_df[(map_df["punteggio"] >= punteggio_min) & (map_df["punteggio"] <= punteggio_max)]
 
-# ✅ Colori per punteggio 1-5
+# ✅ Colori bolle
 def punteggio_to_rgb(p):
     if p <= 2:
         r = 255
@@ -81,28 +86,32 @@ map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
 # ✅ VISTA: MAPPA
 if pagina == "📍 Mappa Punteggi":
     st.subheader("📍 Mappa dei parchi con punteggio finale")
-    view_state = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13, min_zoom=12, max_zoom=15)
-    st.pydeck_chart(pdk.Deck(
-        map_style='mapbox://styles/mapbox/outdoors-v11',
-        initial_view_state=view_state,
-        layers=[
-            pdk.Layer(
-                "ScatterplotLayer",
-                data=map_df,
-                get_position="[Longitudine, Latitudine]",
-                get_fill_color="color",
-                get_radius=150,
-                pickable=True
-            )
-        ],
-        tooltip={"text": "{Nome del Parco}\nPunteggio: {punteggio:.2f}"}
-    ))
-    st.markdown("""
-    ### 🟢 Legenda colori punteggio (da 1 a 5)
-    - 🔴 **Rosso**: Punteggio ≤ 2  
-    - 🟡 **Giallo**: Punteggio tra 2 e 4  
-    - 🟢 **Verde**: Punteggio > 4
-    """)
+
+    if map_df.empty:
+        st.warning("⚠️ Nessun parco soddisfa i filtri selezionati.")
+    else:
+        view_state = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13, min_zoom=12, max_zoom=15)
+        st.pydeck_chart(pdk.Deck(
+            map_style='mapbox://styles/mapbox/outdoors-v11',
+            initial_view_state=view_state,
+            layers=[
+                pdk.Layer(
+                    "ScatterplotLayer",
+                    data=map_df,
+                    get_position="[Longitudine, Latitudine]",
+                    get_fill_color="color",
+                    get_radius=150,
+                    pickable=True
+                )
+            ],
+            tooltip={"text": "{Nome del Parco}\nPunteggio: {punteggio:.2f}"}
+        ))
+        st.markdown("""
+        ### 🟢 Legenda colori punteggio (da 1 a 5)
+        - 🔴 **Rosso**: Punteggio ≤ 2  
+        - 🟡 **Giallo**: Punteggio tra 2 e 4  
+        - 🟢 **Verde**: Punteggio > 4
+        """)
 
 # ✅ VISTA: CLASSIFICA
 elif pagina == "📊 Classifica Parchi":
@@ -111,8 +120,8 @@ elif pagina == "📊 Classifica Parchi":
 
 # ✅ VISTA: ANALISI AGGREGATA
 elif pagina == "📈 Analisi Aggregata":
-    st.subheader("📈 Analisi media e varianza per criterio")
-    
+    st.subheader("📈 Analisi media, varianza e radar per criterio")
+
     # Media e varianza
     media_criteri = df_valutazioni_f[criteri].mean().round(2)
     var_criteri = df_valutazioni_f[criteri].var().round(2)
@@ -146,3 +155,4 @@ elif pagina == "📈 Analisi Aggregata":
     ))
     radar_fig2.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True)
     st.plotly_chart(radar_fig2, use_container_width=True)
+
