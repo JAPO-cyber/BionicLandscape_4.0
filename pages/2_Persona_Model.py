@@ -70,58 +70,137 @@ elif scelta == "Età e Coinvolgimento":
     tab1, tab2 = st.tabs(["🎯 Tavola selezionata", "📊 Confronto tra tavole"])
     with tab1:
         st.subheader("📊 Distribuzione dell'età dei partecipanti")
-        fig_eta = px.histogram(
-            df, x="Età", nbins=10,
-            title="Distribuzione dell'età",
-            labels={"Età": "Età (anni)"},
-            color_discrete_sequence=["#2ca02c"],
-            text_auto=True
-        )
+        fig_eta = px.histogram(df, x="Età", nbins=10, title="Distribuzione dell'età",
+                               labels={"Età": "Età (anni)"}, color_discrete_sequence=["#2ca02c"], text_auto=True)
         fig_eta.update_layout(xaxis_title="Fasce d'età", yaxis_title="Numero di partecipanti", bargap=0.05)
         st.plotly_chart(fig_eta, use_container_width=True)
+        st.markdown("#### 📈 Statistiche descrittive - Età")
+        st.dataframe(df['Età'].describe().to_frame(), use_container_width=True)
     
         st.subheader("📈 Livello di coinvolgimento")
         coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index().reset_index()
         coinvolgimento_counts.columns = ["Coinvolgimento", "Partecipanti"]
-        fig_coinv = px.bar(
-            coinvolgimento_counts,
-            x="Coinvolgimento", y="Partecipanti",
-            title="Coinvolgimento dichiarato",
-            labels={"Coinvolgimento": "Livello (1–10)", "Partecipanti": "N. partecipanti"},
-            text_auto=True,
-            color_discrete_sequence=["#1f77b4"]
-        )
+        fig_coinv = px.bar(coinvolgimento_counts, x="Coinvolgimento", y="Partecipanti",
+                           title="Coinvolgimento dichiarato",
+                           labels={"Coinvolgimento": "Livello (1–10)", "Partecipanti": "N. partecipanti"},
+                           text_auto=True, color_discrete_sequence=["#1f77b4"])
         fig_coinv.update_layout(xaxis=dict(tickmode="linear"), yaxis_title="Numero di partecipanti")
         st.plotly_chart(fig_coinv, use_container_width=True)
-    
+        st.markdown("#### 📈 Statistiche descrittive - Coinvolgimento")
+        st.dataframe(df['Coinvolgimento'].describe().to_frame(), use_container_width=True)
+
+    # --- TAB 2: Confronto tra tavole rotonde ---
     with tab2:
-        st.subheader("📊 Confronto tra tavole rotonde")
-    
-        # Età media
+        st.subheader("📊 Età media per tavola rotonda")
         eta_media = df_completo.groupby("Tavola rotonda")["Età"].mean().reset_index()
-        fig_eta_confronto = px.bar(
-            eta_media,
-            x="Tavola rotonda", y="Età",
-            title="Età media per tavola rotonda",
-            labels={"Età": "Età media"},
-            text_auto=True,
-            color_discrete_sequence=["#2ca02c"]
-        )
+        fig_eta_confronto = px.bar(eta_media, x="Tavola rotonda", y="Età", title="Età media per tavola rotonda",
+                                   labels={"Età": "Età media"}, text_auto=True, color_discrete_sequence=["#2ca02c"])
         st.plotly_chart(fig_eta_confronto, use_container_width=True)
     
-        # Coinvolgimento medio
+        st.subheader("📈 Coinvolgimento medio per tavola rotonda")
         coinv_media = df_completo.groupby("Tavola rotonda")["Coinvolgimento"].mean().reset_index()
-        fig_coinv_confronto = px.bar(
-            coinv_media,
-            x="Tavola rotonda", y="Coinvolgimento",
-            title="Coinvolgimento medio per tavola rotonda",
-            labels={"Coinvolgimento": "Coinvolgimento medio"},
-            text_auto=True,
-            color_discrete_sequence=["#1f77b4"]
-        )
+        fig_coinv_confronto = px.bar(coinv_media, x="Tavola rotonda", y="Coinvolgimento",
+                                     title="Coinvolgimento medio per tavola rotonda",
+                                     labels={"Coinvolgimento": "Coinvolgimento medio"},
+                                     text_auto=True, color_discrete_sequence=["#1f77b4"])
         st.plotly_chart(fig_coinv_confronto, use_container_width=True)
-
-
+    
+        # 🔍 Violin plot e Boxplot
+        st.subheader("🎻 Distribuzioni dettagliate per tavola rotonda")
+        fig_violin = px.violin(df_completo, y="Età", x="Tavola rotonda", box=True, points="all",
+                               color="Tavola rotonda", title="Distribuzione dell'età per tavola rotonda")
+        st.plotly_chart(fig_violin, use_container_width=True)
+    
+        fig_box = px.box(df_completo, y="Coinvolgimento", x="Tavola rotonda", points="all",
+                         color="Tavola rotonda", title="Distribuzione del coinvolgimento per tavola rotonda")
+        st.plotly_chart(fig_box, use_container_width=True)
+        # === Analisi statistica ===
+        st.subheader("📊 Test ANOVA – Differenze tra tavole")
+    
+        from scipy.stats import f_oneway, kruskal, shapiro
+        import scikit_posthocs as sp
+    
+        gruppi_coinv = [g["Coinvolgimento"].dropna().values for _, g in df_completo.groupby("Tavola rotonda") if len(g["Coinvolgimento"].dropna()) > 1]
+        gruppi_eta = [g["Età"].dropna().values for _, g in df_completo.groupby("Tavola rotonda") if len(g["Età"].dropna()) > 1]
+    
+        anova_coinv = f_oneway(*gruppi_coinv)
+        anova_eta = f_oneway(*gruppi_eta)
+    
+        def check_normality(col):
+            return all(shapiro(g[col].dropna())[1] > 0.05 for _, g in df_completo.groupby("Tavola rotonda") if len(g[col].dropna()) >= 3)
+    
+        normal_eta = check_normality("Età")
+        normal_coinv = check_normality("Coinvolgimento")
+    
+        kruskal_eta, kruskal_coinv = None, None
+        if not normal_eta:
+            kruskal_eta = kruskal(*gruppi_eta)
+        if not normal_coinv:
+            kruskal_coinv = kruskal(*gruppi_coinv)
+    
+        df_anova = pd.DataFrame({
+            "Variabile": ["Età", "Coinvolgimento"],
+            "F-value (ANOVA)": [anova_eta.statistic, anova_coinv.statistic],
+            "p-value (ANOVA)": [anova_eta.pvalue, anova_coinv.pvalue],
+            "Distribuzione normale?": ["✅" if normal_eta else "❌", "✅" if normal_coinv else "❌"],
+            "Test alternativo": ["Kruskal-Wallis" if not normal_eta else "-", "Kruskal-Wallis" if not normal_coinv else "-"],
+            "H-value (Kruskal)": [kruskal_eta.statistic if kruskal_eta else None,
+                                  kruskal_coinv.statistic if kruskal_coinv else None],
+            "p-value (Kruskal)": [kruskal_eta.pvalue if kruskal_eta else None,
+                                  kruskal_coinv.pvalue if kruskal_coinv else None]
+        })
+        st.dataframe(df_anova, use_container_width=True)
+    
+        st.markdown("""
+        ℹ️ Il test **ANOVA** verifica se esistono differenze tra le medie. Tuttavia, richiede che i gruppi siano **normalmente distribuiti**.
+        Se questo non è verificato, si applica il test **non parametrico Kruskal-Wallis**.
+        """)
+    
+        # === POST-HOC ===
+        st.subheader("🔎 Analisi post-hoc")
+    
+        if normal_eta and anova_eta.pvalue < 0.05:
+            st.markdown("**Post-hoc Tukey HSD – Età**")
+            from statsmodels.stats.multicomp import pairwise_tukeyhsd
+            tukey_eta = pairwise_tukeyhsd(df_completo["Età"], df_completo["Tavola rotonda"])
+            st.dataframe(pd.DataFrame(tukey_eta.summary().data[1:], columns=tukey_eta.summary().data[0]), use_container_width=True)
+    
+        if not normal_eta and kruskal_eta and kruskal_eta.pvalue < 0.05:
+            st.markdown("**Post-hoc Dunn – Età**")
+            dunn_eta = sp.posthoc_dunn(df_completo, val_col='Età', group_col='Tavola rotonda', p_adjust='bonferroni')
+            st.dataframe(dunn_eta, use_container_width=True)
+    
+        if normal_coinv and anova_coinv.pvalue < 0.05:
+            st.markdown("**Post-hoc Tukey HSD – Coinvolgimento**")
+            tukey_coinv = pairwise_tukeyhsd(df_completo["Coinvolgimento"], df_completo["Tavola rotonda"])
+            st.dataframe(pd.DataFrame(tukey_coinv.summary().data[1:], columns=tukey_coinv.summary().data[0]), use_container_width=True)
+    
+        if not normal_coinv and kruskal_coinv and kruskal_coinv.pvalue < 0.05:
+            st.markdown("**Post-hoc Dunn – Coinvolgimento**")
+            dunn_coinv = sp.posthoc_dunn(df_completo, val_col='Coinvolgimento', group_col='Tavola rotonda', p_adjust='bonferroni')
+            st.dataframe(dunn_coinv, use_container_width=True)
+    
+        # Test di normalità
+        st.subheader("🧪 Test di normalità (Shapiro-Wilk)")
+        def normality_test_by_group(df, column):
+            results = []
+            for name, group in df.groupby("Tavola rotonda"):
+                vals = group[column].dropna()
+                if len(vals) >= 3:
+                    stat, p = shapiro(vals)
+                    results.append({
+                        "Tavola rotonda": name,
+                        "Variabile": column,
+                        "Shapiro-Wilk W": stat,
+                        "p-value": p,
+                        "Normale (α=0.05)": "✅" if p > 0.05 else "❌"
+                    })
+            return pd.DataFrame(results)
+    
+        st.markdown("#### Età")
+        st.dataframe(normality_test_by_group(df_completo, "Età"), use_container_width=True)
+        st.markdown("#### Coinvolgimento")
+        st.dataframe(normality_test_by_group(df_completo, "Coinvolgimento"), use_container_width=True)
 
     
 
