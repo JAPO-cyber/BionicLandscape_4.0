@@ -10,6 +10,9 @@ apply_custom_style()
 
 st.title("6. Analisi e visualizzazione dei risultati")
 
+# ✅ Modalità debug
+debug_mode = True
+
 # ✅ Caricamento dati
 try:
     df_valutazioni = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Valutazione Parchi").get_all_records())
@@ -18,6 +21,11 @@ try:
 except Exception as e:
     st.error("❌ Errore nel caricamento dei dati.")
     st.stop()
+
+# ✅ Debug: dimensioni iniziali
+debug_mode and st.write("📌 Valutazioni totali:", len(df_valutazioni))
+debug_mode and st.write("📌 Info parchi:", len(df_info))
+debug_mode and st.write("📌 Pesi parametri:", len(df_pesi))
 
 # ✅ Definizione criteri e rinomina colonne
 criteri = [
@@ -48,13 +56,12 @@ if tavola_sel != "Tutte":
     df_valutazioni_f = df_valutazioni[df_valutazioni["Tavola rotonda"] == tavola_sel]
     df_pesi = df_pesi[df_pesi["Tavola rotonda"] == tavola_sel]
 
-# ✅ Calcolo media e punteggi con analisi della variabilità
+debug_mode and st.write("📌 Dopo filtro tavola rotonda:", len(df_valutazioni_f))
 
-# Media e deviazione standard per parco e criterio
+# ✅ Calcolo media e punteggi con analisi della variabilità
 media_val = df_valutazioni_f.groupby("Parco")[criteri].mean()
 std_val = df_valutazioni_f.groupby("Parco")[criteri].std()
 
-# Mostra la variabilità a schermo (supporto per Lean Six Sigma)
 st.markdown("### 📊 Analisi statistica preliminare")
 st.markdown("Nella tabella seguente sono riportati i voti medi e la deviazione standard per ciascun criterio, parco per parco. Questo permette di individuare parchi con giudizi instabili o potenzialmente influenzati da outlier.")
 
@@ -65,9 +72,10 @@ st.dataframe(
     ).round(2)
 )
 
-# Filtro per parchi con deviazione standard troppo alta (soglia arbitraria)
 soglia_std = 1.2
 mask_outlier = std_val.max(axis=1) > soglia_std
+
+debug_mode and st.write("📌 Parchi esclusi per alta variabilità:", mask_outlier.sum())
 
 if mask_outlier.any():
     st.warning(f"⚠️ {mask_outlier.sum()} parchi esclusi per alta variabilità nei voti (Dev. Std > {soglia_std})")
@@ -75,7 +83,6 @@ if mask_outlier.any():
 else:
     st.success("✅ Tutti i parchi rientrano nei limiti accettabili di variabilità")
 
-# Calcolo dei punteggi AHP per i parchi filtrati
 pesi_dict = df_pesi[criteri].mean().to_dict()
 
 def calcola_punteggio(riga):
@@ -84,10 +91,10 @@ def calcola_punteggio(riga):
 media_val = media_val.reset_index()
 media_val["punteggio"] = media_val.apply(calcola_punteggio, axis=1)
 
-# Merge con anagrafica parchi
+debug_mode and st.write("📌 Parchi dopo filtro std:", len(media_val))
+
 map_df = pd.merge(media_val, df_info, left_on="Parco", right_on="Nome del Parco", how="inner")
 
-# Validazione merge
 if media_val.empty:
     st.error("❌ Nessun parco con valutazioni disponibili dopo il filtraggio.")
     st.stop()
@@ -96,17 +103,21 @@ if map_df.empty:
     st.error("❌ Nessun match trovato tra parchi valutati e anagrafica parchi.")
     st.stop()
 
-# ✅ Conversione lat/lon e filtro su NaN
+debug_mode and st.write("📌 Parchi dopo merge:", len(map_df))
+
 map_df["Latitudine"] = pd.to_numeric(map_df["Latitudine"], errors="coerce")
 map_df["Longitudine"] = pd.to_numeric(map_df["Longitudine"], errors="coerce")
 map_df = map_df.dropna(subset=["Latitudine", "Longitudine"])
 
-# ✅ Altri filtri
+debug_mode and st.write("📌 Parchi con lat/lon validi:", len(map_df))
+
 if quartiere_sel != "Tutti":
     map_df = map_df[map_df["Quartiere"] == quartiere_sel]
+
 map_df = map_df[(map_df["punteggio"] >= punteggio_min) & (map_df["punteggio"] <= punteggio_max)]
 
-# ✅ Colori bolle
+debug_mode and st.write("📌 Parchi dopo tutti i filtri:", len(map_df))
+
 def punteggio_to_rgb(p):
     if p <= 2:
         r = 255
@@ -120,78 +131,5 @@ def punteggio_to_rgb(p):
     return [r, g, 0, 160]
 
 map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
-
-# ✅ VISTA: MAPPA
-if pagina == "📍 Mappa Punteggi":
-    st.subheader("📍 Mappa dei parchi con punteggio finale")
-
-    if map_df.empty:
-        st.warning("⚠️ Nessun parco soddisfa i filtri selezionati.")
-    else:
-        view_state = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13, min_zoom=12, max_zoom=15)
-        st.pydeck_chart(pdk.Deck(
-            map_style='mapbox://styles/mapbox/outdoors-v11',
-            initial_view_state=view_state,
-            layers=[
-                pdk.Layer(
-                    "ScatterplotLayer",
-                    data=map_df,
-                    get_position="[Longitudine, Latitudine]",
-                    get_fill_color="color",
-                    get_radius=150,
-                    pickable=True
-                )
-            ],
-            tooltip={"text": "{Nome del Parco}\nPunteggio: {punteggio:.2f}"}
-        ))
-        st.markdown("""
-        ### 🟢 Legenda colori punteggio (da 1 a 5)
-        - 🔴 **Rosso**: Punteggio ≤ 2  
-        - 🟡 **Giallo**: Punteggio tra 2 e 4  
-        - 🟢 **Verde**: Punteggio > 4
-        """)
-
-# ✅ VISTA: CLASSIFICA
-elif pagina == "📊 Classifica Parchi":
-    st.subheader("📊 Classifica dei parchi per punteggio")
-    st.dataframe(map_df[["Nome del Parco", "Quartiere", "punteggio"]].sort_values(by="punteggio", ascending=False))
-
-# ✅ VISTA: ANALISI AGGREGATA
-elif pagina == "📈 Analisi Aggregata":
-    st.subheader("📈 Analisi media, varianza e radar per criterio")
-
-    # Media e varianza
-    media_criteri = df_valutazioni_f[criteri].mean().round(2)
-    var_criteri = df_valutazioni_f[criteri].var().round(2)
-
-    st.markdown("**📊 Valori medi:**")
-    st.dataframe(media_criteri.rename("Media").to_frame())
-
-    st.markdown("**📉 Varianza:**")
-    st.dataframe(var_criteri.rename("Varianza").to_frame())
-
-    # Radar chart valori medi
-    st.markdown("**📊 Radar delle valutazioni medie per criterio**")
-    radar_fig = go.Figure()
-    radar_fig.add_trace(go.Scatterpolar(
-        r=media_criteri.tolist(),
-        theta=criteri,
-        fill='toself',
-        name='Valutazioni medie'
-    ))
-    radar_fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=True)
-    st.plotly_chart(radar_fig, use_container_width=True)
-
-    # Radar chart pesi AHP
-    st.markdown("**⚖️ Radar dei pesi AHP medi applicati**")
-    radar_fig2 = go.Figure()
-    radar_fig2.add_trace(go.Scatterpolar(
-        r=list(pesi_dict.values()),
-        theta=criteri,
-        fill='toself',
-        name='Pesi AHP'
-    ))
-    radar_fig2.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True)
-    st.plotly_chart(radar_fig2, use_container_width=True)
 
 
