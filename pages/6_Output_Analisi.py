@@ -115,5 +115,3 @@ def punteggio_to_rgb(p):
 
 map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
 
-
-
