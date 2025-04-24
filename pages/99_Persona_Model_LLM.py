@@ -12,7 +12,8 @@ st.title("📊 Analisi dei Cluster dei Partecipanti")
 
 # ✅ Carica i dati da Google Sheets
 sheet_profiles = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
-df = sheet_profiles
+data = sheet_profiles.get_all_records()
+df = pd.DataFrame(data)
 
 if df is None:
     st.error("❌ Errore nel caricamento del foglio 'Partecipanti'. Controlla che esista e che il nome sia corretto.")
