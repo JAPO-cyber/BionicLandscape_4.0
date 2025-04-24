@@ -12,5 +12,5 @@ gspread
 oauth2client
 scikit-posthocs
 statsmodels
-google
+google-generativeai
 kmodes
