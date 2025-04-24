@@ -110,4 +110,63 @@ def punteggio_to_rgb(p):
 
 map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
 
+# ✅ Visualizzazione in base alla selezione
+if pagina == "📍 Mappa Punteggi":
+    st.subheader("📍 Mappa dei parchi con punteggio finale")
+    if map_df.empty:
+        st.warning("⚠️ Nessun parco soddisfa i filtri selezionati.")
+    else:
+        view_state = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13)
+        st.pydeck_chart(pdk.Deck(
+            map_style='mapbox://styles/mapbox/outdoors-v11',
+            initial_view_state=view_state,
+            layers=[
+                pdk.Layer(
+                    "ScatterplotLayer",
+                    data=map_df,
+                    get_position="[Longitudine, Latitudine]",
+                    get_fill_color="color",
+                    get_radius=150,
+                    pickable=True
+                )
+            ],
+            tooltip={"text": "{Nome del Parco}\nPunteggio: {punteggio:.2f}"}
+        ))
+
+elif pagina == "📊 Classifica Parchi":
+    st.subheader("📊 Classifica dei parchi per punteggio")
+    st.dataframe(map_df[["Nome del Parco", "Quartiere", "punteggio"]].sort_values(by="punteggio", ascending=False))
+
+elif pagina == "📈 Analisi Aggregata":
+    st.subheader("📈 Analisi media, varianza e radar per criterio")
+
+    media_criteri = df_valutazioni_f[criteri].mean().round(2)
+    var_criteri = df_valutazioni_f[criteri].var().round(2)
+
+    st.markdown("**📊 Valori medi:**")
+    st.dataframe(media_criteri.rename("Media").to_frame())
+
+    st.markdown("**📉 Varianza:**")
+    st.dataframe(var_criteri.rename("Varianza").to_frame())
+
+    radar_fig = go.Figure()
+    radar_fig.add_trace(go.Scatterpolar(
+        r=media_criteri.tolist(),
+        theta=criteri,
+        fill='toself',
+        name='Valutazioni medie'
+    ))
+    radar_fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=False)
+    st.plotly_chart(radar_fig, use_container_width=True)
+
+    radar_fig2 = go.Figure()
+    radar_fig2.add_trace(go.Scatterpolar(
+        r=list(pesi_dict.values()),
+        theta=criteri,
+        fill='toself',
+        name='Pesi AHP'
+    ))
+    radar_fig2.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=False)
+    st.plotly_chart(radar_fig2, use_container_width=True)
+
 
