@@ -4,8 +4,8 @@ import plotly.express as px
 from kmodes.kprototypes import KPrototypes
 from lib.google_sheet import get_sheet_by_name
 
-# ✅ Import corretto per Gemini
-import google.generativeai as genai
+# ✅ Import corretto per l'SDK ufficiale di Google Gen AI
+from google import genai
 
 st.set_page_config(page_title="Cluster Insight", layout="wide")
 st.title("📊 Analisi dei Cluster dei Partecipanti")
@@ -47,8 +47,7 @@ st.plotly_chart(fig)
 # Descrizione AI con Gemini
 if st.button("🧠 Genera insight con Gemini"):
     api_key = st.secrets["gemini"]["api_key"]
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
+    client = genai.Client(api_key=api_key)
 
     cluster_summary = df.groupby('Cluster').agg(lambda x: x.mode()[0] if x.dtype == 'object' else x.mean(numeric_only=True))
 
@@ -66,7 +65,11 @@ if st.button("🧠 Genera insight con Gemini"):
     {cluster_summary.to_string()}
     """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
     st.markdown("### 💬 Insight generati con Gemini:")
     st.markdown(response.text)
+
 
