@@ -191,42 +191,41 @@ elif scelta == "Età e Coinvolgimento":
         if not normal_eta and kruskal_eta and kruskal_eta.pvalue < 0.05:
             st.markdown("**Post-hoc Dunn – Età**")
             dunn_eta = sp.posthoc_dunn(df_completo, val_col='Età', group_col='Tavola rotonda', p_adjust='bonferroni')
-    st.dataframe(dunn_eta, use_container_width=True)
-
-if normal_coinv and anova_coinv.pvalue < 0.05:
-    st.markdown("**Post-hoc Tukey HSD – Coinvolgimento**")
-    tukey_coinv = pairwise_tukeyhsd(df_completo["Coinvolgimento"], df_completo["Tavola rotonda"])
-    st.dataframe(pd.DataFrame(tukey_coinv.summary().data[1:], columns=tukey_coinv.summary().data[0]), use_container_width=True)
-
-if not normal_coinv and kruskal_coinv and kruskal_coinv.pvalue < 0.05:
-    st.markdown("**Post-hoc Dunn – Coinvolgimento**")
-    dunn_coinv = sp.posthoc_dunn(df_completo, val_col='Coinvolgimento', group_col='Tavola rotonda', p_adjust='bonferroni')
-    st.dataframe(dunn_coinv, use_container_width=True)
-
-# === TEST DI NORMALITÀ ===
-st.subheader("🧪 Test di normalità (Shapiro-Wilk)")
-def normality_test_by_group(df, column):
-    results = []
-    for name, group in df.groupby("Tavola rotonda"):
-        vals = group[column].dropna()
-        if len(vals) >= 3:
-            stat, p = shapiro(vals)
-            results.append({
-                "Tavola rotonda": name,
-                "Variabile": column,
-                "Shapiro-Wilk W": stat,
-                "p-value": p,
-                "Normale (α=0.05)": "✅" if p > 0.05 else "❌"
-            })
-    return pd.DataFrame(results)
-
-st.markdown("#### Età")
-st.dataframe(normality_test_by_group(df_completo, "Età"), use_container_width=True)
-
-st.markdown("#### Coinvolgimento")
-st.dataframe(normality_test_by_group(df_completo, "Coinvolgimento"), use_container_width=True)
-
+            st.dataframe(dunn_eta, use_container_width=True)
         
+        if normal_coinv and anova_coinv.pvalue < 0.05:
+            st.markdown("**Post-hoc Tukey HSD – Coinvolgimento**")
+            tukey_coinv = pairwise_tukeyhsd(df_completo["Coinvolgimento"], df_completo["Tavola rotonda"])
+            st.dataframe(pd.DataFrame(tukey_coinv.summary().data[1:], columns=tukey_coinv.summary().data[0]), use_container_width=True)
+        
+        if not normal_coinv and kruskal_coinv and kruskal_coinv.pvalue < 0.05:
+            st.markdown("**Post-hoc Dunn – Coinvolgimento**")
+            dunn_coinv = sp.posthoc_dunn(df_completo, val_col='Coinvolgimento', group_col='Tavola rotonda', p_adjust='bonferroni')
+            st.dataframe(dunn_coinv, use_container_width=True)
+        
+        # === TEST DI NORMALITÀ ===
+        st.subheader("🧪 Test di normalità (Shapiro-Wilk)")
+        def normality_test_by_group(df, column):
+            results = []
+            for name, group in df.groupby("Tavola rotonda"):
+                vals = group[column].dropna()
+                if len(vals) >= 3:
+                    stat, p = shapiro(vals)
+                    results.append({
+                        "Tavola rotonda": name,
+                        "Variabile": column,
+                        "Shapiro-Wilk W": stat,
+                        "p-value": p,
+                        "Normale (α=0.05)": "✅" if p > 0.05 else "❌"
+                    })
+            return pd.DataFrame(results)
+        
+        st.markdown("#### Età")
+        st.dataframe(normality_test_by_group(df_completo, "Età"), use_container_width=True)
+        
+        st.markdown("#### Coinvolgimento")
+        st.dataframe(normality_test_by_group(df_completo, "Coinvolgimento"), use_container_width=True)
+                
 
          # ===  === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === ===
 
