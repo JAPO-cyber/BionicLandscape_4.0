@@ -256,30 +256,60 @@ elif scelta == "Età e Coinvolgimento":
          # ===  === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === ===
 
 elif scelta == "Conoscenza tema":
-    fig = px.box(df, y="Conoscenza tema", points="all", title="Boxplot Conoscenza tema")
-    st.plotly_chart(fig, use_container_width=True)
+    tab1, tab2 = st.tabs(["🎯 Tavola selezionata", "📊 Confronto tra quartieri"])
+
+    with tab1:
+        st.subheader("📊 Conoscenza del tema (autovalutazione)")
+        fig = px.box(df, y="Conoscenza tema", points="all", box=True,
+                     title="Distribuzione della conoscenza del tema",
+                     color_discrete_sequence=["#1f77b4"])
+        fig.update_layout(yaxis_title="Valutazione (1–10)")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with tab2:
+        st.subheader("📊 Confronto tra tavole rotonde")
+        fig = px.box(df_completo, y="Conoscenza tema", x="Tavola rotonda", points="all", box=True,
+                     color="Tavola rotonda", title="Conoscenza tema per tavola rotonda")
+        fig.update_layout(yaxis_title="Valutazione (1–10)", xaxis_title="Tavola rotonda")
+        st.plotly_chart(fig, use_container_width=True)
 
 elif scelta == "Visione e Valori":
-    st.bar_chart(df["Visione"].value_counts())
-    valori_series = df["Valori"].str.split(", ").explode()
-    st.subheader("Valori più rappresentati")
-    st.bar_chart(valori_series.value_counts())
+    tab1, tab2 = st.tabs(["🎯 Tavola selezionata", "📊 Confronto tra quartieri"])
 
-elif scelta == "Ambiti di Interesse":
-    fig = px.pie(df, names="Ambito", title="Ambiti di interesse")
-    st.plotly_chart(fig, use_container_width=True)
+    with tab1:
+        st.subheader("🧭 Visione")
+        visione_counts = df["Visione"].value_counts().reset_index()
+        visione_counts.columns = ["Visione", "Partecipanti"]
+        fig_visione = px.bar(visione_counts, x="Visione", y="Partecipanti",
+                             text_auto=True, color_discrete_sequence=["#2ca02c"],
+                             title="Visione dei partecipanti")
+        st.plotly_chart(fig_visione, use_container_width=True)
 
-elif scelta == "Esperienza Precedente":
-    st.bar_chart(df["Esperienza"].value_counts())
+        st.subheader("💡 Valori più rappresentati")
+        valori_series = df["Valori"].str.split(", ").explode()
+        valori_counts = valori_series.value_counts().reset_index()
+        valori_counts.columns = ["Valore", "Frequenza"]
+        fig_valori = px.bar(valori_counts, x="Valore", y="Frequenza",
+                            text_auto=True, color_discrete_sequence=["#1f77b4"],
+                            title="Distribuzione dei valori indicati")
+        st.plotly_chart(fig_valori, use_container_width=True)
 
-elif scelta == "Canali Preferiti":
-    st.bar_chart(df["Canale preferito"].value_counts())
+    with tab2:
+        st.subheader("📊 Visione nei diversi quartieri")
+        visione_confronto = df_completo.groupby(["Tavola rotonda", "Visione"]).size().reset_index(name="Frequenza")
+        fig = px.bar(visione_confronto, x="Visione", y="Frequenza", color="Tavola rotonda", barmode="group",
+                     title="Distribuzione delle visioni per tavola rotonda", text_auto=True)
+        st.plotly_chart(fig, use_container_width=True)
 
-elif scelta == "Ruoli":
-    st.bar_chart(df["Ruolo"].value_counts())
+        st.subheader("📊 Valori nei diversi quartieri")
+        valori_series_all = df_completo["Valori"].str.split(", ").explode()
+        valori_confronto = valori_series_all.groupby([df_completo["Tavola rotonda"], valori_series_all]).size().reset_index(name="Frequenza")
+        valori_confronto.columns = ["Tavola rotonda", "Valore", "Frequenza"]
+        fig_valori = px.bar(valori_confronto, x="Valore", y="Frequenza", color="Tavola rotonda", barmode="group",
+                            title="Valori per tavola rotonda", text_auto=True)
+        st.plotly_chart(fig_valori, use_container_width=True)
 
-elif scelta == "Formazione":
-    st.bar_chart(df["Formazione"].value_counts())
+         # ===  === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === === ===
 
 elif scelta == "Correlazioni":
     corr = df[["Età", "Coinvolgimento", "Conoscenza tema"]].corr()
