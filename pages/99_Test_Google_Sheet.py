@@ -8,9 +8,9 @@ api_key = st.secrets["gemini"]["api_key"]
 genai.configure(api_key=api_key)
 
 try:
-    model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel("gemini-1.5-pro-latest")
     response = model.generate_content("Scrivi una frase motivazionale sul cambiamento urbano.")
     st.success("✅ Risposta ricevuta da Gemini:")
     st.markdown(response.text)
 except Exception as e:
-    st.error("❌ Errore: " + str(e))
+    st.error(f"❌ Errore:\n{str(e)}")
