@@ -260,7 +260,7 @@ elif scelta == "Conoscenza tema":
 
     with tab1:
         st.subheader("📊 Conoscenza del tema (autovalutazione)")
-        fig = px.box(df, y="Conoscenza tema", points="all", box=True,
+        fig = px.violin(df, y="Conoscenza tema", points="all", box=True,
                      title="Distribuzione della conoscenza del tema",
                      color_discrete_sequence=["#1f77b4"])
         fig.update_layout(yaxis_title="Valutazione (1–10)")
@@ -268,7 +268,7 @@ elif scelta == "Conoscenza tema":
 
     with tab2:
         st.subheader("📊 Confronto tra tavole rotonde")
-        fig = px.box(df_completo, y="Conoscenza tema", x="Tavola rotonda", points="all", box=True,
+        fig = px.violin(df_completo, y="Conoscenza tema", x="Tavola rotonda", points="all", box=True,
                      color="Tavola rotonda", title="Conoscenza tema per tavola rotonda")
         fig.update_layout(yaxis_title="Valutazione (1–10)", xaxis_title="Tavola rotonda")
         st.plotly_chart(fig, use_container_width=True)
