@@ -10,9 +10,6 @@ apply_custom_style()
 
 st.title("6. Analisi e visualizzazione dei risultati")
 
-# ✅ Modalità debug
-debug_mode = True
-
 # ✅ Caricamento dati
 try:
     df_valutazioni = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Valutazione Parchi").get_all_records())
@@ -21,11 +18,6 @@ try:
 except Exception as e:
     st.error("❌ Errore nel caricamento dei dati.")
     st.stop()
-
-# ✅ Debug: dimensioni iniziali
-debug_mode and st.write("📌 Valutazioni totali:", len(df_valutazioni))
-debug_mode and st.write("📌 Info parchi:", len(df_info))
-debug_mode and st.write("📌 Pesi parametri:", len(df_pesi))
 
 # ✅ Definizione criteri e rinomina colonne
 criteri = [
@@ -56,8 +48,6 @@ if tavola_sel != "Tutte":
     df_valutazioni_f = df_valutazioni[df_valutazioni["Tavola rotonda"] == tavola_sel]
     df_pesi = df_pesi[df_pesi["Tavola rotonda"] == tavola_sel]
 
-debug_mode and st.write("📌 Dopo filtro tavola rotonda:", len(df_valutazioni_f))
-
 # ✅ Calcolo media e punteggi con analisi della variabilità
 media_val = df_valutazioni_f.groupby("Parco")[criteri].mean()
 std_val = df_valutazioni_f.groupby("Parco")[criteri].std()
@@ -75,8 +65,6 @@ st.dataframe(
 soglia_std = 1.2
 mask_outlier = std_val.max(axis=1) > soglia_std
 
-debug_mode and st.write("📌 Parchi esclusi per alta variabilità:", mask_outlier.sum())
-
 if mask_outlier.any():
     st.warning(f"⚠️ {mask_outlier.sum()} parchi esclusi per alta variabilità nei voti (Dev. Std > {soglia_std})")
     media_val = media_val[~mask_outlier]
@@ -91,8 +79,6 @@ def calcola_punteggio(riga):
 media_val = media_val.reset_index()
 media_val["punteggio"] = media_val.apply(calcola_punteggio, axis=1)
 
-debug_mode and st.write("📌 Parchi dopo filtro std:", len(media_val))
-
 map_df = pd.merge(media_val, df_info, left_on="Parco", right_on="Nome del Parco", how="inner")
 
 if media_val.empty:
@@ -103,20 +89,17 @@ if map_df.empty:
     st.error("❌ Nessun match trovato tra parchi valutati e anagrafica parchi.")
     st.stop()
 
-debug_mode and st.write("📌 Parchi dopo merge:", len(map_df))
-
 map_df["Latitudine"] = pd.to_numeric(map_df["Latitudine"], errors="coerce")
 map_df["Longitudine"] = pd.to_numeric(map_df["Longitudine"], errors="coerce")
 map_df = map_df.dropna(subset=["Latitudine", "Longitudine"])
 
-debug_mode and st.write("📌 Parchi con lat/lon validi:", len(map_df))
-
 if quartiere_sel != "Tutti":
     map_df = map_df[map_df["Quartiere"] == quartiere_sel]
 
-map_df = map_df[(map_df["punteggio"] >= punteggio_min) & (map_df["punteggio"] <= punteggio_max)]
+# ✅ Applichiamo un round per evitare errori di precisione
+map_df["punteggio"] = map_df["punteggio"].round(2)
 
-debug_mode and st.write("📌 Parchi dopo tutti i filtri:", len(map_df))
+map_df = map_df[(map_df["punteggio"] >= punteggio_min) & (map_df["punteggio"] <= punteggio_max)]
 
 def punteggio_to_rgb(p):
     if p <= 2:
