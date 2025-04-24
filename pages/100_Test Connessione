@@ -1,0 +1,40 @@
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# Caricamento dati dei parchi da Google Sheet o CSV (qui un esempio mock)
+# Sostituisci questa parte con il tuo foglio Google Sheet
+data = {
+    'Parco': ['Parco A', 'Parco B', 'Parco C', 'Parco D'],
+    'Accessibilità del verde': [1.8, 3.2, 2.0, 4.1],
+    'Funzione sociale': [3.5, 1.7, 2.1, 4.6]
+}
+df = pd.DataFrame(data)
+
+# Soglia dei quadranti
+soglia = 2.5
+
+# Plot
+fig = px.scatter(
+    df,
+    x="Accessibilità del verde",
+    y="Funzione sociale",
+    text="Parco",
+    title="📍 Parchi in Quadranti - Accessibilità vs Funzione Sociale",
+)
+
+# Aggiunta linee dei quadranti
+fig.add_shape(type="line", x0=soglia, x1=soglia, y0=0, y1=5, line=dict(color="gray", dash="dash"))
+fig.add_shape(type="line", x0=0, x1=5, y0=soglia, y1=soglia, line=dict(color="gray", dash="dash"))
+
+# Etichette quadranti
+fig.add_annotation(x=0.75, y=4.7, text="Bassa Accessibilità, Alta Funzione", showarrow=False)
+fig.add_annotation(x=0.75, y=0.3, text="Bassa Accessibilità, Bassa Funzione", showarrow=False)
+fig.add_annotation(x=4.0, y=0.3, text="Alta Accessibilità, Bassa Funzione", showarrow=False)
+fig.add_annotation(x=4.0, y=4.7, text="Alta Accessibilità, Alta Funzione", showarrow=False)
+
+fig.update_traces(marker=dict(size=12, color='green'), textposition='top center')
+fig.update_layout(xaxis=dict(range=[0, 5]), yaxis=dict(range=[0, 5]))
+
+# Streamlit output
+st.plotly_chart(fig)
