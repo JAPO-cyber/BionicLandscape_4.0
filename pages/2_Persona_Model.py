@@ -78,7 +78,17 @@ elif scelta == "Età e Coinvolgimento":
         st.markdown("#### 📈 Statistiche descrittive - Età")
         eta_stats = df['Età'].describe().to_frame().T
         eta_stats.index = ["Età"]
-        st.dataframe(eta_stats.style.format(precision=2), use_container_width=True)
+        
+        st.dataframe(
+            eta_stats.style
+                .format(precision=2)
+                .set_properties(**{"text-align": "center"})
+                .set_table_styles([{
+                    'selector': 'th',
+                    'props': [('font-weight', 'bold'), ('text-align', 'center')]
+                }]),
+            use_container_width=True
+        )
     
         st.subheader("📈 Livello di coinvolgimento")
         coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index().reset_index()
@@ -93,7 +103,17 @@ elif scelta == "Età e Coinvolgimento":
         st.markdown("#### 📈 Statistiche descrittive - Coinvolgimento")
         coinv_stats = df['Coinvolgimento'].describe().to_frame().T
         coinv_stats.index = ["Coinvolgimento"]
-        st.dataframe(coinv_stats.style.format(precision=2), use_container_width=True)
+        
+        st.dataframe(
+            coinv_stats.style
+                .format(precision=2)
+                .set_properties(**{"text-align": "center"})
+                .set_table_styles([{
+                    'selector': 'th',
+                    'props': [('font-weight', 'bold'), ('text-align', 'center')]
+                }]),
+            use_container_width=True
+        )
 
     # --- TAB 2: Confronto tra tavole rotonde ---
     with tab2:
