@@ -12,4 +12,4 @@ gspread
 oauth2client
 scikit-posthocs
 statsmodels
-google
+google-generativeai>=1.0.0
