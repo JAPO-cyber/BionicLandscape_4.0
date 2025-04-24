@@ -40,7 +40,7 @@ with st.sidebar:
     quartieri = df_info["Quartiere"].dropna().unique().tolist()
     quartiere_sel = st.selectbox("🏘️ Filtra per quartiere:", ["Tutti"] + quartieri)
 
-    punteggio_min, punteggio_max = st.slider("🎚️ Range punteggio", 1.0, 5.0, (1.0, 5.0), 0.1)
+    , 0.1)
 
 # ✅ Filtri base
 df_valutazioni_f = df_valutazioni.copy()
@@ -99,7 +99,7 @@ if quartiere_sel != "Tutti":
 # ✅ Applichiamo un round per evitare errori di precisione
 map_df["punteggio"] = map_df["punteggio"].round(2)
 
-map_df = map_df[(map_df["punteggio"] >= punteggio_min) & (map_df["punteggio"] <= punteggio_max)]
+
 
 def punteggio_to_rgb(p):
     if p <= 2:
@@ -114,5 +114,6 @@ def punteggio_to_rgb(p):
     return [r, g, 0, 160]
 
 map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
+
 
 
