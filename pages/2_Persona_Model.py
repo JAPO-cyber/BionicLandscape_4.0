@@ -74,8 +74,11 @@ elif scelta == "Età e Coinvolgimento":
                                labels={"Età": "Età (anni)"}, color_discrete_sequence=["#2ca02c"], text_auto=True)
         fig_eta.update_layout(xaxis_title="Fasce d'età", yaxis_title="Numero di partecipanti", bargap=0.05)
         st.plotly_chart(fig_eta, use_container_width=True)
+        # Statistiche descrittive - Età
         st.markdown("#### 📈 Statistiche descrittive - Età")
-        st.dataframe(df['Età'].describe().to_frame(), use_container_width=True)
+        eta_stats = df['Età'].describe().to_frame().T
+        eta_stats.index = ["Età"]
+        st.dataframe(eta_stats.style.format(precision=2), use_container_width=True)
     
         st.subheader("📈 Livello di coinvolgimento")
         coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index().reset_index()
@@ -86,8 +89,11 @@ elif scelta == "Età e Coinvolgimento":
                            text_auto=True, color_discrete_sequence=["#1f77b4"])
         fig_coinv.update_layout(xaxis=dict(tickmode="linear"), yaxis_title="Numero di partecipanti")
         st.plotly_chart(fig_coinv, use_container_width=True)
+        # Statistiche descrittive - Coinvolgimento
         st.markdown("#### 📈 Statistiche descrittive - Coinvolgimento")
-        st.dataframe(df['Coinvolgimento'].describe().to_frame(), use_container_width=True)
+        coinv_stats = df['Coinvolgimento'].describe().to_frame().T
+        coinv_stats.index = ["Coinvolgimento"]
+        st.dataframe(coinv_stats.style.format(precision=2), use_container_width=True)
 
     # --- TAB 2: Confronto tra tavole rotonde ---
     with tab2:
