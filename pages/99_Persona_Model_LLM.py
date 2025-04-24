@@ -9,9 +9,13 @@ import google.generativeai as genai
 st.set_page_config(page_title="Cluster Insight", layout="wide")
 st.title("📊 Analisi dei Cluster dei Partecipanti")
 
-# Caricamento dati dal foglio Google Sheet
-sheet_name = "Partecipanti"
-df = get_sheet_by_name(sheet_name)
+# ✅ Carica i dati da Google Sheets
+sheet_profiles = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
+df = sheet_profiles
+
+if df is None:
+    st.error("❌ Errore nel caricamento del foglio 'Partecipanti'. Controlla che esista e che il nome sia corretto.")
+    st.stop()
 
 # Selezione colonne rilevanti per il clustering
 columns = [
@@ -64,3 +68,4 @@ if st.button("🧠 Genera insight con Gemini"):
     response = model.generate_content(prompt)
     st.markdown("### 💬 Insight generati con Gemini:")
     st.markdown(response.text)
+
