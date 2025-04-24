@@ -137,7 +137,7 @@ elif scelta == "Età e Coinvolgimento":
                                color="Tavola rotonda", title="Distribuzione dell'età per tavola rotonda")
         st.plotly_chart(fig_violin, use_container_width=True)
     
-        fig_box = px.violin(df_completo, y="Coinvolgimento", x="Tavola rotonda", points="all",
+        fig_box = px.violin(df_completo, y="Coinvolgimento", x="Tavola rotonda", box=True,points="all",
                          color="Tavola rotonda", title="Distribuzione del coinvolgimento per tavola rotonda")
         st.plotly_chart(fig_box, use_container_width=True)
 
