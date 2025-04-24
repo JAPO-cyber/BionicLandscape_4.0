@@ -13,3 +13,4 @@ oauth2client
 scikit-posthocs
 statsmodels
 google
+kmodes
