@@ -68,9 +68,29 @@ if scelta == "Dataset":
     st.dataframe(df)
 
 elif scelta == "Età e Coinvolgimento":
-    fig = px.histogram(df, x="Età", nbins=10, title="Distribuzione età")
-    st.plotly_chart(fig, use_container_width=True)
-    st.bar_chart(df.groupby("Coinvolgimento").size(), use_container_width=True)
+    # Istogramma età con dettagli
+    fig_eta = px.histogram(
+        df, 
+        x="Età", 
+        nbins=10, 
+        title="Distribuzione dell'età dei partecipanti",
+        labels={"Età": "Età (anni)"},
+        color_discrete_sequence=["#2ca02c"]
+    )
+    fig_eta.update_layout(
+        xaxis_title="Fasce d'età",
+        yaxis_title="Numero di partecipanti",
+        bargap=0.05
+    )
+    st.plotly_chart(fig_eta, use_container_width=True)
+    
+    # Bar chart del coinvolgimento con titoli e ordinamento
+    coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index()
+    st.bar_chart(
+        coinvolgimento_counts,
+        use_container_width=True
+    )
+    st.markdown("**Distribuzione del livello di coinvolgimento dichiarato dai partecipanti** (scala 1–10)")
 
 elif scelta == "Conoscenza tema":
     fig = px.box(df, y="Conoscenza tema", points="all", title="Boxplot Conoscenza tema")
