@@ -48,15 +48,53 @@ if tavola_sel != "Tutte":
     df_valutazioni_f = df_valutazioni[df_valutazioni["Tavola rotonda"] == tavola_sel]
     df_pesi = df_pesi[df_pesi["Tavola rotonda"] == tavola_sel]
 
-# ✅ Calcolo media e punteggi
-media_val = df_valutazioni_f.groupby("Parco")[criteri].mean().reset_index()
+# ✅ Calcolo media e punteggi con analisi della variabilità
+
+# Media e deviazione standard per parco e criterio
+media_val = df_valutazioni_f.groupby("Parco")[criteri].mean()
+std_val = df_valutazioni_f.groupby("Parco")[criteri].std()
+
+# Mostra la variabilità a schermo (supporto per Lean Six Sigma)
+st.markdown("### 📊 Analisi statistica preliminare")
+st.markdown("Nella tabella seguente sono riportati i voti medi e la deviazione standard per ciascun criterio, parco per parco. Questo permette di individuare parchi con giudizi instabili o potenzialmente influenzati da outlier.")
+
+st.dataframe(
+    pd.concat(
+        [media_val.add_suffix(" (Media)"), std_val.add_suffix(" (Dev. Std)")],
+        axis=1
+    ).round(2)
+)
+
+# Filtro per parchi con deviazione standard troppo alta (soglia arbitraria)
+soglia_std = 1.2
+mask_outlier = std_val.max(axis=1) > soglia_std
+
+if mask_outlier.any():
+    st.warning(f"⚠️ {mask_outlier.sum()} parchi esclusi per alta variabilità nei voti (Dev. Std > {soglia_std})")
+    media_val = media_val[~mask_outlier]
+else:
+    st.success("✅ Tutti i parchi rientrano nei limiti accettabili di variabilità")
+
+# Calcolo dei punteggi AHP per i parchi filtrati
 pesi_dict = df_pesi[criteri].mean().to_dict()
 
 def calcola_punteggio(riga):
     return sum(riga[c] * pesi_dict.get(c, 0) for c in criteri)
 
+media_val = media_val.reset_index()
 media_val["punteggio"] = media_val.apply(calcola_punteggio, axis=1)
-map_df = pd.merge(media_val, df_info, left_on="Parco", right_on="Nome del Parco")
+
+# Merge con anagrafica parchi
+map_df = pd.merge(media_val, df_info, left_on="Parco", right_on="Nome del Parco", how="inner")
+
+# Validazione merge
+if media_val.empty:
+    st.error("❌ Nessun parco con valutazioni disponibili dopo il filtraggio.")
+    st.stop()
+
+if map_df.empty:
+    st.error("❌ Nessun match trovato tra parchi valutati e anagrafica parchi.")
+    st.stop()
 
 # ✅ Conversione lat/lon e filtro su NaN
 map_df["Latitudine"] = pd.to_numeric(map_df["Latitudine"], errors="coerce")
@@ -155,4 +193,5 @@ elif pagina == "📈 Analisi Aggregata":
     ))
     radar_fig2.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True)
     st.plotly_chart(radar_fig2, use_container_width=True)
+
 
