@@ -68,14 +68,16 @@ if scelta == "Dataset":
     st.dataframe(df)
 
 elif scelta == "Età e Coinvolgimento":
-    # Istogramma età con dettagli
+    # 📊 Distribuzione Età
+    st.subheader("📊 Distribuzione dell'età dei partecipanti")
     fig_eta = px.histogram(
-        df, 
-        x="Età", 
-        nbins=10, 
+        df,
+        x="Età",
+        nbins=10,
         title="Distribuzione dell'età dei partecipanti",
         labels={"Età": "Età (anni)"},
-        color_discrete_sequence=["#2ca02c"]
+        color_discrete_sequence=["#2ca02c"],
+        text_auto=True
     )
     fig_eta.update_layout(
         xaxis_title="Fasce d'età",
@@ -84,13 +86,28 @@ elif scelta == "Età e Coinvolgimento":
     )
     st.plotly_chart(fig_eta, use_container_width=True)
     
-    # Bar chart del coinvolgimento con titoli e ordinamento
-    coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index()
-    st.bar_chart(
+    # 📈 Coinvolgimento
+    st.subheader("📈 Livello di coinvolgimento dichiarato")
+    coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index().reset_index()
+    coinvolgimento_counts.columns = ["Coinvolgimento", "Partecipanti"]
+    
+    fig_coinvolgimento = px.bar(
         coinvolgimento_counts,
-        use_container_width=True
+        x="Coinvolgimento",
+        y="Partecipanti",
+        title="Distribuzione del livello di coinvolgimento",
+        labels={"Coinvolgimento": "Livello di coinvolgimento (1-10)", "Partecipanti": "Numero di partecipanti"},
+        text_auto=True,
+        color_discrete_sequence=["#1f77b4"]
     )
-    st.markdown("**Distribuzione del livello di coinvolgimento dichiarato dai partecipanti** (scala 1–10)")
+    fig_coinvolgimento.update_layout(
+        xaxis=dict(tickmode="linear"),
+        yaxis_title="Numero di partecipanti"
+    )
+    st.plotly_chart(fig_coinvolgimento, use_container_width=True)
+
+
+    
 
 elif scelta == "Conoscenza tema":
     fig = px.box(df, y="Conoscenza tema", points="all", title="Boxplot Conoscenza tema")
