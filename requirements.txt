@@ -10,3 +10,5 @@ python-docx
 kaleido
 gspread 
 oauth2client
+scikit-posthocs
+statsmodels
