@@ -1,4 +1,44 @@
+import streamlit as st
+import pandas as pd
+import pydeck as pdk
+import plotly.graph_objects as go
+from lib.style import apply_custom_style
+from lib.google_sheet import get_sheet_by_name
 
+st.set_page_config(page_title="6. Analisi e risultati", layout="wide")
+apply_custom_style()
+
+st.title("6. Analisi e visualizzazione dei risultati")
+
+# ✅ Caricamento dati
+try:
+    df_valutazioni = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Valutazione Parchi").get_all_records())
+    df_pesi = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Pesi Parametri").get_all_records())
+    df_info = pd.DataFrame(get_sheet_by_name("Dati_Partecipante", "Informazioni Parchi").get_all_records())
+except Exception as e:
+    st.error("❌ Errore nel caricamento dei dati.")
+    st.stop()
+
+# ✅ Definizione criteri e rinomina colonne
+criteri = [
+    "Accessibilità del verde", "Biodiversità", "Manutenzione e pulizia",
+    "Funzione sociale", "Funzione ambientale"
+]
+df_pesi = df_pesi.rename(columns={
+    "Funzione sociale (es. luoghi di incontro)": "Funzione sociale",
+    "Funzione ambientale (es. ombra, qualità aria)": "Funzione ambientale"
+})
+
+# ✅ Sidebar: selezione vista e filtri
+with st.sidebar:
+    st.header("📊 Analisi")
+    pagina = st.radio("Seleziona vista:", ["📍 Mappa Punteggi", "📊 Classifica Parchi", "📈 Analisi Aggregata"])
+
+    tavole = df_valutazioni["Tavola rotonda"].dropna().unique().tolist()
+    tavola_sel = st.selectbox("🎯 Filtra per Tavola rotonda:", ["Tutte"] + tavole)
+
+    quartieri = df_info["Quartiere"].dropna().unique().tolist()
+    quartiere_sel = st.selectbox("🏘️ Filtra per quartiere:", ["Tutti"] + quartieri)
 
 # ✅ Filtri base
 df_valutazioni_f = df_valutazioni.copy()
@@ -54,10 +94,7 @@ map_df = map_df.dropna(subset=["Latitudine", "Longitudine"])
 if quartiere_sel != "Tutti":
     map_df = map_df[map_df["Quartiere"] == quartiere_sel]
 
-# ✅ Applichiamo un round per evitare errori di precisione
 map_df["punteggio"] = map_df["punteggio"].round(2)
-
-
 
 def punteggio_to_rgb(p):
     if p <= 2:
@@ -72,4 +109,5 @@ def punteggio_to_rgb(p):
     return [r, g, 0, 160]
 
 map_df["color"] = map_df["punteggio"].apply(punteggio_to_rgb)
+
 
