@@ -5,7 +5,7 @@ from kmodes.kprototypes import KPrototypes
 from lib.google_sheet import get_sheet_by_name
 
 # ✅ Import corretto per Gemini
-from google import genai
+from google-generativeai import genai
 
 st.set_page_config(page_title="Cluster Insight", layout="wide")
 st.title("📊 Analisi dei Cluster dei Partecipanti")
