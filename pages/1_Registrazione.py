@@ -7,7 +7,7 @@ from lib.google_sheet import get_sheet_by_name
 from lib.style import apply_custom_style
 
 # ✅ Configura pagina
-st.set_page_config(page_title="Bionic 4.0 - Registrazione", layout="wide")
+st.set_page_config(page_title="Registrazione", layout="wide")
 
 # ✅ Verifica login
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
@@ -39,7 +39,7 @@ if "id_partecipante" not in st.session_state:
         st.stop()
 
 # ✅ Titolo
-st.markdown('<div class="header">🏠 Benvenuto nella dashboard di Bionic 4.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="header">🏠 Benvenuto nella pagina di registrazione', unsafe_allow_html=True)
 st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
 
 # ✅ Mostra l’ID partecipante all’utente
@@ -67,25 +67,25 @@ with st.form("user_info_form"):
     eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
     professione = st.text_input("💼 Professione")
     ruolo = st.selectbox("🎭 Qual è il tuo ruolo in questo progetto?", [
-        "Cittadino interessato", "Tecnico/Esperto", "Rappresentante istituzionale", "Studente", "Altro"
+        "Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"
     ])
     formazione = st.text_input("🎓 Formazione o background (facoltativo)", placeholder="Esempio: Architettura, Economia, Informatica...")
 
     ambito = st.selectbox("🌱 Qual è il tuo principale ambito di interesse?", [
-        "Urbanistica", "Tecnologia e digitale", "Transizione ecologica",
-        "Inclusione sociale", "Economia e lavoro", "Cultura e creatività"
-    ])
+        "Ambientale", "Culturale", "Sociale",
+        "Educativo", "Urbanistico"])
+    
     esperienza = st.radio("🧭 Hai già partecipato ad altri progetti partecipativi?", ["Sì", "No"])
     coinvolgimento = st.slider("📍 Quanto ti senti coinvolto/a nella vita del tuo territorio?", 0, 10, 5)
     conoscenza = st.slider("📚 Quanto conosci il tema di questa tavola rotonda?", 0, 10, 5)
     motivazione = st.text_area("🗣️ Cosa ti ha spinto a partecipare a questo tavolo di lavoro?", placeholder="Scrivi liberamente...")
     obiettivo = st.text_area("🎯 Cosa ti piacerebbe ottenere da questo incontro?", placeholder="Ad esempio: conoscere persone, contribuire a un'idea, essere aggiornato...")
-    visione = st.radio("🔍 Ti senti più orientato a...", ["Valori tradizionali", "Innovazione", "Equilibrio tra i due"])
+    visione = st.radio("🔍 Ti senti più orientato a...", ["Città verde", "Comunità coesa", "Parchi per tutti", "Tecnologia al servizio del verde"])
     valori = st.multiselect("❤️ Quali di questi valori senti più vicini?", [
-        "Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione"
+        "Innovazione", "Collaborazione", "Responsabilità", "Tradizione", "Trasparenza", "Inclusione","Sostenibilità"
     ])
     canale = st.selectbox("📡 Come preferisci essere aggiornato su iniziative pubbliche?", [
-        "Email", "Social", "Eventi pubblici", "Siti ufficiali", "Bacheche locali"
+        "Email", "Social", "Eventi pubblici", "Sito web", "Bacheche locali","Volantino","Scuola","Passaparola"
     ])
 
     submitted = st.form_submit_button("Invia")
