@@ -31,18 +31,17 @@ sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
 
 if sheet:
     data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+    df_completo = pd.DataFrame(data)
 
-    # ✅ Filtra per tavola rotonda selezionata o consenti scelta
     tavola_rotonda = st.session_state.get("tavola_rotonda", None)
     if tavola_rotonda:
-        df = df[df["Tavola rotonda"] == tavola_rotonda]
+        df = df_completo[df_completo["Tavola rotonda"] == tavola_rotonda]
         st.info(f"📌 Analisi basata sulla tavola rotonda selezionata: **{tavola_rotonda}**")
     else:
         st.warning("⚠️ Nessuna tavola rotonda selezionata nella fase precedente.")
-        tavole_uniche = df["Tavola rotonda"].unique().tolist()
+        tavole_uniche = df_completo["Tavola rotonda"].unique().tolist()
         scelta_manuale = st.selectbox("🔘 Seleziona manualmente la tavola rotonda da analizzare:", tavole_uniche)
-        df = df[df["Tavola rotonda"] == scelta_manuale]
+        df = df_completo[df_completo["Tavola rotonda"] == scelta_manuale]
         st.info(f"📌 Analisi basata sulla tavola rotonda selezionata: **{scelta_manuale}**")
 else:
     st.error("❌ Errore nel caricamento dei dati da Google Sheets.")
@@ -68,43 +67,60 @@ if scelta == "Dataset":
     st.dataframe(df)
 
 elif scelta == "Età e Coinvolgimento":
-    # 📊 Distribuzione Età
-    st.subheader("📊 Distribuzione dell'età dei partecipanti")
-    fig_eta = px.histogram(
-        df,
-        x="Età",
-        nbins=10,
-        title="Distribuzione dell'età dei partecipanti",
-        labels={"Età": "Età (anni)"},
-        color_discrete_sequence=["#2ca02c"],
-        text_auto=True
-    )
-    fig_eta.update_layout(
-        xaxis_title="Fasce d'età",
-        yaxis_title="Numero di partecipanti",
-        bargap=0.05
-    )
-    st.plotly_chart(fig_eta, use_container_width=True)
+    tab1, tab2 = st.tabs(["🎯 Tavola selezionata", "📊 Confronto tra tavole"])
+    with tab1:
+        st.subheader("📊 Distribuzione dell'età dei partecipanti")
+        fig_eta = px.histogram(
+            df, x="Età", nbins=10,
+            title="Distribuzione dell'età",
+            labels={"Età": "Età (anni)"},
+            color_discrete_sequence=["#2ca02c"],
+            text_auto=True
+        )
+        fig_eta.update_layout(xaxis_title="Fasce d'età", yaxis_title="Numero di partecipanti", bargap=0.05)
+        st.plotly_chart(fig_eta, use_container_width=True)
     
-    # 📈 Coinvolgimento
-    st.subheader("📈 Livello di coinvolgimento dichiarato")
-    coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index().reset_index()
-    coinvolgimento_counts.columns = ["Coinvolgimento", "Partecipanti"]
+        st.subheader("📈 Livello di coinvolgimento")
+        coinvolgimento_counts = df["Coinvolgimento"].value_counts().sort_index().reset_index()
+        coinvolgimento_counts.columns = ["Coinvolgimento", "Partecipanti"]
+        fig_coinv = px.bar(
+            coinvolgimento_counts,
+            x="Coinvolgimento", y="Partecipanti",
+            title="Coinvolgimento dichiarato",
+            labels={"Coinvolgimento": "Livello (1–10)", "Partecipanti": "N. partecipanti"},
+            text_auto=True,
+            color_discrete_sequence=["#1f77b4"]
+        )
+        fig_coinv.update_layout(xaxis=dict(tickmode="linear"), yaxis_title="Numero di partecipanti")
+        st.plotly_chart(fig_coinv, use_container_width=True)
     
-    fig_coinvolgimento = px.bar(
-        coinvolgimento_counts,
-        x="Coinvolgimento",
-        y="Partecipanti",
-        title="Distribuzione del livello di coinvolgimento",
-        labels={"Coinvolgimento": "Livello di coinvolgimento (1-10)", "Partecipanti": "Numero di partecipanti"},
-        text_auto=True,
-        color_discrete_sequence=["#1f77b4"]
-    )
-    fig_coinvolgimento.update_layout(
-        xaxis=dict(tickmode="linear"),
-        yaxis_title="Numero di partecipanti"
-    )
-    st.plotly_chart(fig_coinvolgimento, use_container_width=True)
+    with tab2:
+        st.subheader("📊 Confronto tra tavole rotonde")
+    
+        # Età media
+        eta_media = df_completo.groupby("Tavola rotonda")["Età"].mean().reset_index()
+        fig_eta_confronto = px.bar(
+            eta_media,
+            x="Tavola rotonda", y="Età",
+            title="Età media per tavola rotonda",
+            labels={"Età": "Età media"},
+            text_auto=True,
+            color_discrete_sequence=["#2ca02c"]
+        )
+        st.plotly_chart(fig_eta_confronto, use_container_width=True)
+    
+        # Coinvolgimento medio
+        coinv_media = df_completo.groupby("Tavola rotonda")["Coinvolgimento"].mean().reset_index()
+        fig_coinv_confronto = px.bar(
+            coinv_media,
+            x="Tavola rotonda", y="Coinvolgimento",
+            title="Coinvolgimento medio per tavola rotonda",
+            labels={"Coinvolgimento": "Coinvolgimento medio"},
+            text_auto=True,
+            color_discrete_sequence=["#1f77b4"]
+        )
+        st.plotly_chart(fig_coinv_confronto, use_container_width=True)
+
 
 
     
