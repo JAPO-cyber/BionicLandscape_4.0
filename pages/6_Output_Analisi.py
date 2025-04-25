@@ -80,7 +80,8 @@ if quart_sel != "Tutti": map_df_combi = map_df_combi[map_df_combi["Quartiere"]==
 if page_sel=="📍 Mappa Punteggi":
     st.subheader("Mappa Citizen")
     df_map = map_df_std.assign(color=map_df_std['punteggio_std'].apply(lambda p:[max(0,255-int(p*50)),min(255,int(p*50)),0,160]), radius=map_df_std['punteggio_std']*50)
-    st.pydeck_chart(pdk.Deck(map_style='mapbox://styles/mapbox/outdoors-v11', initial_view_state=pdk.ViewState(45.6983,9.6773,13), layers=[pdk.Layer('ScatterplotLayer', data=df_map, get_position='[Longitudine, Latitudine]', get_fill_color='color', get_radius='radius', pickable=True)], tooltip={"text":"{Nome del Parco}\nCitizen: {punteggio_std:.2f}"}), key='map_citizen')
+    st.pydeck_chart(pdk.Deck(map_style='mapbox://styles/mapbox/outdoors-v11', initial_view_state=pdk.ViewState(45.6983,9.6773,13), layers=[pdk.Layer('ScatterplotLayer', data=df_map, get_position='[Longitudine, Latitudine]', get_fill_color='color', get_radius='radius', pickable=True)], tooltip={'text':'{Nome del Parco}
+Citizen: {punteggio_std:.2f}'}), key='map_citizen')
 
 # Classifica
 elif page_sel=="📊 Classifica Parchi":
@@ -107,7 +108,10 @@ elif page_sel=="🔀 Combina Green & Citizen":
     st.plotly_chart(fig,use_container_width=True, height=600, key='scatter_combi')
     st.subheader("Mappa Combinata")
     dfc=map_df_combi.assign(color_cit=map_df_combi['punteggio_std'].apply(lambda p:[max(0,255-int(p*50)),min(255,int(p*50)),0,160]), radius_green=map_df_combi['punteggio_green']*50)
-    st.pydeck_chart(pdk.Deck(map_style='mapbox://styles/mapbox/outdoors-v11', initial_view_state=pdk.ViewState(45.6983,9.6773,13), layers=[pdk.Layer('ScatterplotLayer',data=dfc,get_position='[Longitudine, Latitudine]',get_fill_color='color_cit',get_radius='radius_green',pickable=True)], tooltip={"text":"{Nome del Parco}\nGreen: {punteggio_green:.2f}\nCitizen: {punteggio_std:.2f}\nQuadrante: {quadrante}"}), key='map_combi')
+    st.pydeck_chart(pdk.Deck(map_style='mapbox://styles/mapbox/outdoors-v11', initial_view_state=pdk.ViewState(45.6983,9.6773,13), layers=[pdk.Layer('ScatterplotLayer',data=dfc,get_position='[Longitudine, Latitudine]',get_fill_color='color_cit',get_radius='radius_green',pickable=True)], tooltip={'text':'{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'}), key='map_combi')
 
 # Correlazione
 elif page_sel=="📉 Correlazione Criteri":
@@ -122,3 +126,4 @@ elif page_sel=="📋 Tabella Completa":
     st.write("**Valutazioni Verde**"); st.dataframe(df_val_green, key='raw_valg')
     st.write("**Pesi Citizen (0-1)**"); st.dataframe(df_pesi[CRITERI_STD].round(2), key='raw_pesi')
     st.write("**Pesi Verde (0-1)**"); st.dataframe(df_pesi_green[criteri_green_eff].round(2), key='raw_pesig')
+
