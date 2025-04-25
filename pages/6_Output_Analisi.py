@@ -208,40 +208,66 @@ elif page_sel == "📈 Analisi Aggregata":
 
 elif page_sel == "🔀 Combina Green & Citizen":
     st.subheader("Combinazione Green vs Citizen")
-    x_mid = map_df_combi['punteggio_green'].mean()
-    y_mid = map_df_combi['punteggio_std'].mean()
+    # Definizione mid-point e range fisso
+    x_mid, y_mid = 2.5, 2.5
+    # Nomi personalizzati dei quadranti
+    quadrant_names = {
+        'Top Right': 'Leader Sostenibili',
+        'Top Left': 'Verdi Puristi',
+        'Bottom Left': 'Critici Ecologici',
+        'Bottom Right': 'Cittadini Fedeli'
+    }
     def lbl(r):
-        x,y=r['punteggio_green'],r['punteggio_std']
-        if x>=x_mid and y>=y_mid: return 'Top Right'
-        if x< x_mid and y>=y_mid: return 'Top Left'
-        if x< x_mid and y< y_mid: return 'Bottom Left'
-        return 'Bottom Right'
-    map_df_combi['quadrante']=map_df_combi.apply(lbl,axis=1)
-    fig2=px.scatter(
-        map_df_combi,x='punteggio_green',y='punteggio_std',size='Manutenzione',
-        color='quadrante',hover_name='Nome del Parco',
-        labels={'punteggio_green':'Score Green','punteggio_std':'Citizen'}
+        x, y = r['punteggio_green'], r['punteggio_std']
+        if x >= x_mid and y >= y_mid:
+            return quadrant_names['Top Right']
+        if x < x_mid and y >= y_mid:
+            return quadrant_names['Top Left']
+        if x < x_mid and y < y_mid:
+            return quadrant_names['Bottom Left']
+        return quadrant_names['Bottom Right']
+    map_df_combi['quadrante'] = map_df_combi.apply(lbl, axis=1)
+
+    # Scatter plot with fixed axes and custom quadrant labels
+    fig2 = px.scatter(
+        map_df_combi,
+        x='punteggio_green', y='punteggio_std',
+        size='Manutenzione', color='quadrante', hover_name='Nome del Parco',
+        labels={'punteggio_green':'Score Green','punteggio_std':'Citizen Score'},
+        category_orders={'quadrante': list(quadrant_names.values())}
     )
-    fig2.add_vline(x=x_mid,line_dash='dash')
-    fig2.add_hline(y=y_mid,line_dash='dash')
-    st.plotly_chart(fig2,use_container_width=True,key='scatter_combi',height=600)
+    # Fisso range assi e linee di divisione
+    fig2.update_xaxes(range=[0, 5])
+    fig2.update_yaxes(range=[0, 5])
+    fig2.add_vline(x=x_mid, line_dash='dash', line_color='gray')
+    fig2.add_hline(y=y_mid, line_dash='dash', line_color='gray')
+    st.plotly_chart(fig2, use_container_width=True, key='scatter_combi', height=600)
+
+    # Mappa Combinata rimane invariata
     st.subheader("Mappa Combinata")
-    dfm=map_df_combi.assign(
+    dfm = map_df_combi.assign(
         color_cit=map_df_combi['punteggio_std'].apply(
-            lambda p:[max(0,255-int(p*50)),min(255,int(p*50)),0,160]
-        ),radius_green=map_df_combi['punteggio_green']*50
+            lambda p: [max(0,255-int(p*50)), min(255,int(p*50)), 0, 160]
+        ),
+        radius_green=map_df_combi['punteggio_green'] * 50
     )
     st.pydeck_chart(
         pdk.Deck(
             map_style='mapbox://styles/mapbox/outdoors-v11',
-            initial_view_state=pdk.ViewState(latitude=45.6983,longitude=9.6773,zoom=13),
-            layers=[pdk.Layer('ScatterplotLayer',data=dfm,
-                             get_position='[Longitudine, Latitudine]',
-                             get_fill_color='color_cit',
-                             get_radius='radius_green',pickable=True)
-                   ],
-            tooltip={"text":"{Nome del Parco}\nGreen: {punteggio_green:.2f}\nCitizen: {punteggio_std:.2f}\nQuadrante: {quadrante}"}
-        ),key='map_combi'
+            initial_view_state=pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13),
+            layers=[
+                pdk.Layer(
+                    'ScatterplotLayer', data=dfm,
+                    get_position='[Longitudine, Latitudine]',
+                    get_fill_color='color_cit',
+                    get_radius='radius_green', pickable=True
+                )
+            ],
+            tooltip={"text":"{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}"}
+        ), key='map_combi'
     )
 
 elif page_sel == "📉 Correlazione Criteri":
@@ -275,6 +301,7 @@ elif page_sel == "📋 Tabella Completa":
     st.write("**Pesi Verde (0-1)**")
     # Mostra solo i criteri green effettivi, arrotondati a 2 decimali
     st.dataframe(df_pesi_green[criteri_green_eff].round(2), key='raw_pesig')
+
 
 
 
