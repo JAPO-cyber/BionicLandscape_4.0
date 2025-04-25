@@ -71,6 +71,18 @@ df_pesi_green[criteri_green] = df_pesi_green[criteri_green] / 100
 
 # -------------------- Sidebar Filters --------------------
 st.sidebar.header("Filtri")
+# Aggiunta vista Evoluzione nel tempo
+page_sel = st.sidebar.radio("Vista:", [
+    "📍 Mappa Punteggi", "📊 Classifica Parchi",
+    "📈 Analisi Aggregata", "🔀 Combina Green & Citizen",
+    "📉 Correlazione Criteri", "📋 Tabella Completa", "🕒 Evoluzione nel tempo"
+])
+tav_sel = st.sidebar.selectbox("Tavola rotonda:", ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist())
+quart_sel = st.sidebar.selectbox("Quartiere:", ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist())
+if tav_sel != "Tutte":
+    mask = df_val["Tavola rotonda"] == tav_sel
+    df_val = df_val[mask]
+    df_pesi = df_pesi[mask]("Filtri")
 page_sel = st.sidebar.radio("Vista:", [
     "📍 Mappa Punteggi","📊 Classifica Parchi",
     "📈 Analisi Aggregata","🔀 Combina Green & Citizen",
@@ -255,3 +267,64 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi[CRITERI_STD].round(2), key='raw_pesi')
     st.write("**Pesi Verde (0-1)**")
     st.dataframe(df_pesi_green[criteri_green_eff].round(2), key='raw_pesig')
+
+# Evoluzione nel tempo
+elif page_sel == "🕒 Evoluzione nel tempo":
+    st.subheader("Evoluzione temporale del punteggio Citizen")
+    # Prepara dati temporali
+    df_time = df_val.copy()
+    df_time['Timestamp'] = pd.to_datetime(df_time['Timestamp'], dayfirst=True)
+    df_time['YearWeek'] = df_time['Timestamp'].dt.strftime('%Y-W%V')
+    # Calcola punteggio su criteri standard
+    df_time['score'] = df_time[CRITERI_STD].mul(pesi_std, axis=1).sum(axis=1)
+    # Raggruppa per settimana
+    weekly = df_time.groupby('YearWeek')['score'].mean().reset_index()
+    # Statistiche di controllo (Individuals Chart)
+    mu = weekly['score'].mean()
+    sigma = weekly['score'].std()
+    UCL = mu + 3 * sigma
+    LCL = mu - 3 * sigma
+
+    # Moving Range per MR-Chart
+    weekly['MR'] = weekly['score'].diff().abs()
+    avg_mr = weekly['MR'].mean()
+    # Fattore d2 per n=2 => d2=1.128
+    UCL_mr = avg_mr * 3.268  # 3.268 = 3/d2
+    LCL_mr = 0
+
+    # Grafico X-MR Chart
+    fig_x = go.Figure()
+    fig_x.add_trace(go.Scatter(x=weekly['YearWeek'], y=weekly['score'], mode='lines+markers', name='Score'))
+    fig_x.add_hline(y=mu, line_dash='dash', annotation_text='CL')
+    fig_x.add_hline(y=UCL, line_dash='dot', line_color='red', annotation_text='UCL')
+    fig_x.add_hline(y=LCL, line_dash='dot', line_color='red', annotation_text='LCL')
+    fig_x.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Score', height=400)
+    st.plotly_chart(fig_x, use_container_width=True, key='x_chart')
+
+    fig_mr = go.Figure()
+    fig_mr.add_trace(go.Bar(x=weekly['YearWeek'], y=weekly['MR'], name='MR'))
+    fig_mr.add_hline(y=avg_mr, line_dash='dash', annotation_text='MR̄')
+    fig_mr.add_hline(y=UCL_mr, line_dash='dot', line_color='red', annotation_text='UCL MR')
+    fig_mr.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Moving Range', height=300)
+    st.plotly_chart(fig_mr, use_container_width=True, key='mr_chart')
+
+    # Previsione con Exponential Smoothing
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
+    # Modello senza stagionalità
+    model = ExponentialSmoothing(weekly['score'], trend='add', seasonal=None)
+    fit = model.fit(optimized=True)
+    forecast_periods = 8  # settimane future
+    pred = fit.forecast(forecast_periods)
+    # Prepara dati di previsione
+    future_idx = pd.date_range(start=weekly['YearWeek'].iloc[-1] + '-1', periods=forecast_periods, freq='W-MON')
+    future_weeks = [d.strftime('%Y-W%V') for d in future_idx]
+    df_pred = pd.DataFrame({'YearWeek': future_weeks, 'forecast': pred.values})
+
+    # Visualizza previsione
+    st.subheader("Previsione punteggio futuro")
+    fig_fc = go.Figure()
+    fig_fc.add_trace(go.Scatter(x=weekly['YearWeek'], y=weekly['score'], mode='lines+markers', name='Storico'))
+    fig_fc.add_trace(go.Scatter(x=df_pred['YearWeek'], y=df_pred['forecast'], mode='lines+markers', name='Previsione'))
+    fig_fc.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Score', height=400)
+    st.plotly_chart(fig_fc, use_container_width=True, key='forecast_chart')
+
