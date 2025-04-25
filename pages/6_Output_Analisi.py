@@ -132,17 +132,33 @@ map_df_green['punteggio_green'] = map_df_green[criteri_green].mul(df_weights, ax
 map_df_green = to_numeric_df(map_df_green, ["Latitudine", "Longitudine"])
 
 # ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# 5️⃣  Merge for Combined Analysis
+# ------------------------------------------------------------------
+# Uniamo standard + green per l'analisi combinata
+df_combi = map_df_std.merge(
+    map_df_green[['Nome del Parco','punteggio_green'] + criteri_green],
+    on='Nome del Parco', how='inner'
+)
+map_df_combi = df_combi.copy()
+
+# Applica filtro quartiere anche alla combinata
+if quart_sel != 'Tutti':
+    map_df_combi = map_df_combi[map_df_combi['Quartiere']==quart_sel]
+
+# ------------------------------------------------------------------
 # 📍 Mappa Punteggi
-if page_sel == "📍 Mappa Punteggi":
+elif page_sel == "📍 Mappa Punteggi":
     st.subheader("Mappa dei parchi (Citizen)")
     df = map_df_std.assign(
         color = map_df_std['punteggio_std'].apply(lambda p: [max(0,255-int(p*50)), min(255,int(p*50)), 0, 160]),
         radius = map_df_std['punteggio_std'] * 100
     )
+    view = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13)
     st.pydeck_chart(
         pdk.Deck(
             map_style='mapbox://styles/mapbox/outdoors-v11',
-            initial_view_state=pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13),
+            initial_view_state=view,
             layers=[
                 pdk.Layer('ScatterplotLayer', data=df,
                           get_position='[Longitudine, Latitudine]',
@@ -150,7 +166,7 @@ if page_sel == "📍 Mappa Punteggi":
                           get_radius='radius', pickable=True)
             ],
             tooltip={'text': '{Nome del Parco}\nCitizen: {punteggio_std:.2f}'}
-        )
+        ), key='map_citizen'
     )
 
 # 📊 Classifica Parchi
@@ -158,7 +174,8 @@ elif page_sel == "📊 Classifica Parchi":
     st.subheader("Classifica dei parchi per Citizen Score")
     st.dataframe(
         map_df_std[['Nome del Parco','Quartiere','punteggio_std']]
-        .sort_values(by='punteggio_std', ascending=False).round(2)
+        .sort_values(by='punteggio_std', ascending=False).round(2),
+        key='table_citizen'
     )
 
 # 📈 Analisi Aggregata
@@ -166,12 +183,12 @@ elif page_sel == "📈 Analisi Aggregata":
     st.subheader("Statistiche & Radar (Citizen)")
     media_vals = df_val_f[CRITERI_STD].mean()
     fig_bar = px.bar(x=CRITERI_STD, y=media_vals, labels={'x':'Criterio','y':'Media'})
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.plotly_chart(fig_bar, use_container_width=True, key='bar_agg')
     radar = go.Figure(go.Scatterpolar(
         r=media_vals.tolist()+[media_vals.iloc[0]],
         theta=CRITERI_STD+[CRITERI_STD[0]], fill='toself'))
     radar.update_layout(polar=dict(radialaxis=dict(range=[0,5])), showlegend=False)
-    st.plotly_chart(radar, use_container_width=True)
+    st.plotly_chart(radar, use_container_width=True, key='radar_agg')
 
 # 🔀 Combina Green & Citizen
 elif page_sel == "🔀 Combina Green & Citizen":
@@ -179,7 +196,7 @@ elif page_sel == "🔀 Combina Green & Citizen":
     # Definisci mid-point per quadranti
     x_mid = map_df_combi['punteggio_green'].mean()
     y_mid = map_df_combi['punteggio_std'].mean()
-    
+
     def label_quadrant(row):
         x, y = row['punteggio_green'], row['punteggio_std']
         if x>=x_mid and y>=y_mid: return 'Top Right'
@@ -188,7 +205,6 @@ elif page_sel == "🔀 Combina Green & Citizen":
         return 'Bottom Right'
 
     map_df_combi['quadrante'] = map_df_combi.apply(label_quadrant, axis=1)
-    colors = {'Top Right':'green','Top Left':'blue','Bottom Left':'red','Bottom Right':'orange'}
     # Scatter
     fig_sc = px.scatter(
         map_df_combi, x='punteggio_green', y='punteggio_std',
@@ -197,8 +213,8 @@ elif page_sel == "🔀 Combina Green & Citizen":
     )
     fig_sc.add_vline(x=x_mid, line_dash='dash')
     fig_sc.add_hline(y=y_mid, line_dash='dash')
-    st.plotly_chart(fig_sc, use_container_width=True, height=600)
-    
+    st.plotly_chart(fig_sc, use_container_width=True, height=600, key='scatter_combi')
+
     # Mappa combinata
     st.subheader("Mappa Combinata")
     map_df_combi['color_cit'] = map_df_combi['punteggio_std'].apply(
@@ -216,7 +232,7 @@ elif page_sel == "🔀 Combina Green & Citizen":
                           get_radius='radius_green', pickable=True)
             ],
             tooltip={'text':'{Nome del Parco}\nGreen: {punteggio_green:.2f}\nCitizen: {punteggio_std:.2f}\nQuadrante: {quadrante}'}
-        )
+        ), key='map_combi'
     )
 
 # 📉 Correlazione Criteri
@@ -243,4 +259,5 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi_f)
     st.markdown("**Pesi Verde**")
     st.dataframe(df_pesi_green)
+
 
