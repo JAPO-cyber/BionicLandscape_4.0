@@ -71,25 +71,19 @@ df_pesi_green[criteri_green] = df_pesi_green[criteri_green] / 100
 
 # -------------------- Sidebar Filters --------------------
 st.sidebar.header("Filtri")
-# Aggiunta vista Evoluzione nel tempo
 page_sel = st.sidebar.radio("Vista:", [
     "📍 Mappa Punteggi", "📊 Classifica Parchi",
     "📈 Analisi Aggregata", "🔀 Combina Green & Citizen",
     "📉 Correlazione Criteri", "📋 Tabella Completa", "🕒 Evoluzione nel tempo"
 ])
-tav_sel = st.sidebar.selectbox("Tavola rotonda:", ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist())
-quart_sel = st.sidebar.selectbox("Quartiere:", ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist())
-if tav_sel != "Tutte":
-    mask = df_val["Tavola rotonda"] == tav_sel
-    df_val = df_val[mask]
-    df_pesi = df_pesi[mask]("Filtri")
-page_sel = st.sidebar.radio("Vista:", [
-    "📍 Mappa Punteggi","📊 Classifica Parchi",
-    "📈 Analisi Aggregata","🔀 Combina Green & Citizen",
-    "📉 Correlazione Criteri","📋 Tabella Completa"
-])
-tav_sel = st.sidebar.selectbox("Tavola rotonda:", ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist())
-quart_sel = st.sidebar.selectbox("Quartiere:", ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist())
+tav_sel = st.sidebar.selectbox(
+    "Tavola rotonda:",
+    ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist()
+)
+quart_sel = st.sidebar.selectbox(
+    "Quartiere:",
+    ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist()
+)
 if tav_sel != "Tutte":
     mask = df_val["Tavola rotonda"] == tav_sel
     df_val = df_val[mask]
@@ -327,4 +321,5 @@ elif page_sel == "🕒 Evoluzione nel tempo":
     fig_fc.add_trace(go.Scatter(x=df_pred['YearWeek'], y=df_pred['forecast'], mode='lines+markers', name='Previsione'))
     fig_fc.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Score', height=400)
     st.plotly_chart(fig_fc, use_container_width=True, key='forecast_chart')
+
 
