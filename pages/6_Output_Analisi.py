@@ -108,29 +108,29 @@ map_df_std = to_numeric_df(map_df_std, ["Latitudine", "Longitudine"])
 # 4️⃣  Compute Green Scores
 # ------------------------------------------------------------------
 META_COLS = {"Timestamp", "Utente", "Index", "Persona"}
-criteri_green = [c for c in df_pesi_green.columns if c not in META_COLS]
-pesi_green = df_pesi_green[criteri_green].apply(pd.to_numeric, errors='coerce').mean()
+# Tutti i criteri definiti nei pesi
+criteri_green_all = [c for c in df_pesi_green.columns if c not in META_COLS]
+# Filtriamo solo quelli presenti anche nel foglio di valutazione verde
+criteri_green = [c for c in criteri_green_all if c in df_val_green.columns]
+
+# Calcoliamo i pesi usando solo i criteri effettivi
+df_pesi_green_numeric = df_pesi_green[criteri_green].apply(pd.to_numeric, errors='coerce')
+pesi_green = df_pesi_green_numeric.mean()
+
+# Media dei voti per parco sui criteri effettivi
 media_green = df_val_green.groupby("Parco")[criteri_green].mean()
+
+# Merge con info e calcolo punteggio verde
 map_df_green = pd.merge(
     df_info, media_green,
     left_on="Nome del Parco", right_index=True, how="inner"
 )
-map_df_green['punteggio_green'] = map_df_green[criteri_green].mul(pesi_green).sum(axis=1)
+# Ponderazione solo sui criteri effettivi
+df_weights = pesi_green[criteri_green]
+map_df_green['punteggio_green'] = map_df_green[criteri_green].mul(df_weights, axis=1).sum(axis=1)
+# Assicuriamo lat/long numerici
 map_df_green = to_numeric_df(map_df_green, ["Latitudine", "Longitudine"])
 
-# ------------------------------------------------------------------
-# 5️⃣  Merge for Combined Analysis
-# ------------------------------------------------------------------
-map_df_combi = pd.merge(
-    map_df_std, map_df_green[['Nome del Parco', 'punteggio_green', *criteri_green]],
-    on='Nome del Parco', how='inner'
-)
-if quart_sel != 'Tutti':
-    map_df_std   = map_df_std[map_df_std['Quartiere']==quart_sel]
-    map_df_combi = map_df_combi[map_df_combi['Quartiere']==quart_sel]
-
-# ------------------------------------------------------------------
-# 6️⃣  Render Pages
 # ------------------------------------------------------------------
 # 📍 Mappa Punteggi
 if page_sel == "📍 Mappa Punteggi":
@@ -243,3 +243,4 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi_f)
     st.markdown("**Pesi Verde**")
     st.dataframe(df_pesi_green)
+
