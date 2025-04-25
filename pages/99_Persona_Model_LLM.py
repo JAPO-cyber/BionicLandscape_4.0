@@ -4,6 +4,7 @@ import plotly.express as px
 from kmodes.kprototypes import KPrototypes
 from lib.google_sheet import get_sheet_by_name
 import re
+import json
 
 # ✅ Import SDK Gemini
 from google import genai
