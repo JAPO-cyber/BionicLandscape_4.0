@@ -60,6 +60,28 @@ df_pesi.rename(columns={
 }, inplace=True)
 
 # ------------------------------------------------------------------
+# Correzione decimali: sostituisci virgola con punto nei pesi
+# ------------------------------------------------------------------
+def fix_decimal_commas(df: pd.DataFrame, cols: list[str]):
+    for c in cols:
+        df[c] = df[c].astype(str).str.replace(',', '.', regex=False)
+        df[c] = pd.to_numeric(df[c], errors='coerce')
+    return df
+
+# Applica correzione sui pesi citizen e pesi green
+df_pesi = fix_decimal_commas(df_pesi, CRITERI_STD)
+# Inizializziamo CRITERI_STD prima dell'uso
+CRITERI_STD = [
+    "Accessibilità del verde", "Biodiversità",
+    "Manutenzione e pulizia", "Funzione sociale", "Funzione ambientale"
+]
+df_pesi_green = fix_decimal_commas(df_pesi_green, [c for c in df_pesi_green.columns if c not in {"Timestamp","Utente","Index","Persona"}])
+(columns={
+    "Funzione sociale (es. luoghi di incontro)": "Funzione sociale",
+    "Funzione ambientale (es. ombra, qualità aria)": "Funzione ambientale"
+}, inplace=True)
+
+# ------------------------------------------------------------------
 # 2️⃣  Sidebar Filters & Page Selection
 # ------------------------------------------------------------------
 st.sidebar.header("📊 Filtri")
@@ -152,7 +174,7 @@ elif page_sel == "📍 Mappa Punteggi":
     st.subheader("Mappa dei parchi (Citizen)")
     df = map_df_std.assign(
         color = map_df_std['punteggio_std'].apply(lambda p: [max(0,255-int(p*50)), min(255,int(p*50)), 0, 160]),
-        radius = map_df_std['punteggio_std'] * 100
+        radius = map_df_std['punteggio_std'] * 50  # ridotto da 100 a 50 per evitare copertura eccessiva
     )
     view = pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13)
     st.pydeck_chart(
@@ -165,7 +187,8 @@ elif page_sel == "📍 Mappa Punteggi":
                           get_fill_color='color',
                           get_radius='radius', pickable=True)
             ],
-            tooltip={'text': '{Nome del Parco}\nCitizen: {punteggio_std:.2f}'}
+            tooltip={'text': '{Nome del Parco}
+Citizen: {punteggio_std:.2f}'}
         ), key='map_citizen'
     )
 
@@ -220,7 +243,7 @@ elif page_sel == "🔀 Combina Green & Citizen":
     map_df_combi['color_cit'] = map_df_combi['punteggio_std'].apply(
         lambda p: [max(0,255-int(p*50)), min(255,int(p*50)), 0, 160]
     )
-    map_df_combi['radius_green'] = map_df_combi['punteggio_green'] * 100
+    map_df_combi['radius_green'] = map_df_combi['punteggio_green'] * 50  # scalatura ridotta da 100 a 50
     st.pydeck_chart(
         pdk.Deck(
             map_style='mapbox://styles/mapbox/outdoors-v11',
@@ -231,7 +254,10 @@ elif page_sel == "🔀 Combina Green & Citizen":
                           get_fill_color='color_cit',
                           get_radius='radius_green', pickable=True)
             ],
-            tooltip={'text':'{Nome del Parco}\nGreen: {punteggio_green:.2f}\nCitizen: {punteggio_std:.2f}\nQuadrante: {quadrante}'}
+            tooltip={'text':'{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'}
         ), key='map_combi'
     )
 
@@ -259,5 +285,6 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi_f)
     st.markdown("**Pesi Verde**")
     st.dataframe(df_pesi_green)
+
 
 
