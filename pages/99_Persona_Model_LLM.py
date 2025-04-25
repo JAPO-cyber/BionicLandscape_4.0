@@ -92,28 +92,37 @@ with tab2:
     obiettivi = df["Obiettivo"].dropna().tolist()
 
     prompt = f"""
-    Sei un'unità di pianificazione del verde del Comune di Bergamo. 
-    Hai raccolto due liste di risposte dai cittadini:
+Sei un facilitatore esperto che collabora con l'Amministrazione Comunale di Bergamo per migliorare il verde urbano attraverso l'ascolto strutturato dei cittadini.
 
-    - **Motivazioni**: {motivazioni}
-    - **Obiettivi**: {obiettivi}
+Abbiamo raccolto due elenchi di risposte aperte da un questionario:
+- Motivazioni: {motivazioni}
+- Obiettivi: {obiettivi}
 
-    Unisci questi due elenchi e analizzali per:
-    1. Identificare le voci più frequenti (in ordine decrescente) sotto forma di analisi Pareto. Restituisci una lista di oggetti con chiavi "voce" e "frequenza".
-    2. Classificare le voci più ricorrenti secondo le categorie di un Diagramma di Ishikawa (es. Metodi, Persone, Ambiente, Strumenti, Processi, ecc.). 
+### FASE 1 – ANALISI PARETO
+Unifica e analizza questi due elenchi per identificare le richieste o temi più frequenti. Raggruppali per categoria logica (es. "più alberi", "maggior coinvolgimento", "migliore manutenzione", "spazi per bambini") e calcola quante volte ogni tema appare.
+Restituisci i risultati in questo formato JSON:
+"pareto": [
+  {{ "tema": "più alberi", "frequenza": 18 }},
+  ...
+]
 
-    ⚠️ Rispondi **solo** con un oggetto JSON **valido**, senza testo aggiuntivo, spiegazioni o blocchi markdown. 
-    Formato atteso:
-    {{
-        "pareto": [{{"voce": "...", "frequenza": ...}}, ...],
-        "ishikawa": {{
-            "Metodi": ["..."],
-            "Persone": ["..."],
-            "Ambiente": ["..."],
-            ...
-        }}
-    }}
-    """
+### FASE 2 – DIAGRAMMA DI ISHIKAWA
+Costruisci un diagramma di Ishikawa (Causa-Effetto) partendo dalla domanda centrale:
+**"Perché i cittadini non si sentono pienamente coinvolti nella progettazione e gestione del verde urbano?"**
+
+Raggruppa le cause in massimo 6 categorie (es. Metodi, Persone, Strumenti, Ambiente, Comunicazione, Processi), ciascuna con una lista di 3–6 cause ricorrenti emerse nei commenti.
+
+⚠️ Rispondi solo con un oggetto JSON valido, senza testo descrittivo né blocchi markdown.
+
+Formato atteso finale:
+{{
+  "pareto": [...],
+  "ishikawa": {{
+    "Categoria1": [...],
+    ...
+  }}
+}}
+"""
 
     if st.button("📊 Analizza motivazioni con Gemini", key="analisi_pareto_ishikawa"):
         api_key = st.secrets["gemini"]["api_key"]
@@ -132,9 +141,11 @@ with tab2:
 
             # 🔹 Grafico Pareto
             pareto_df = pd.DataFrame(result["pareto"])
-            fig_pareto = px.bar(pareto_df, x="voce", y="frequenza",
-                                title="🔢 Analisi Pareto – Motivazioni e Obiettivi",
-                                labels={"voce": "Voce", "frequenza": "Frequenza"})
+            fig_pareto = px.bar(
+                pareto_df, x="tema", y="frequenza",
+                title="🔢 Analisi Pareto – Richieste principali dei cittadini",
+                labels={"tema": "Tema", "frequenza": "Frequenza"}
+            )
             st.plotly_chart(fig_pareto)
 
             # 🔹 Tabella Ishikawa
