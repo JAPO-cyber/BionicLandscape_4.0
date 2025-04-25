@@ -24,7 +24,7 @@ def load_data() -> dict[str, pd.DataFrame]:
         "df_valutazioni_green": "Valutazione Parchi Verde",
         "df_pesi_green": "Pesi Parametri Verde",
     }
-    dfs: dict[str, pd.DataFrame] = {}
+    dfs = {}
     for key, name in sheets.items():
         dfs[key] = pd.DataFrame(
             get_sheet_by_name("Dati_Partecipante", name).get_all_records()
@@ -32,6 +32,7 @@ def load_data() -> dict[str, pd.DataFrame]:
     return dfs
 
 # Fix comma decimals in specified columns
+
 def fix_decimal_commas(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     for c in cols:
         df[c] = (
@@ -41,12 +42,15 @@ def fix_decimal_commas(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
         )
     return df
 
+# ------------------------------------------------------------------
+# App Config
+# ------------------------------------------------------------------
 st.set_page_config(page_title="6. Analisi e risultati", layout="wide")
 apply_custom_style()
 st.title("6. Analisi e visualizzazione dei risultati")
 
 # ------------------------------------------------------------------
-# 1️⃣ Load and clean
+# 1️⃣ Load and Clean Data
 # ------------------------------------------------------------------
 dfs = load_data()
 df_val = dfs["df_valutazioni"]
@@ -58,7 +62,7 @@ df_pesi_green = dfs["df_pesi_green"]
 for df in (df_val, df_pesi, df_info, df_val_green, df_pesi_green):
     df.rename(columns=lambda c: str(c).strip(), inplace=True)
 
-# Rename long fields
+# Rename extended fields
 rename_map = {
     "Funzione sociale (es. luoghi di incontro)": "Funzione sociale",
     "Funzione ambientale (es. ombra, qualità aria)": "Funzione ambientale",
@@ -67,32 +71,23 @@ df_val.rename(columns=rename_map, inplace=True)
 df_pesi.rename(columns=rename_map, inplace=True)
 
 # ------------------------------------------------------------------
+# 2️⃣ Correct Decimal and Normalize Weights
 # ------------------------------------------------------------------
-# 2️⃣ Define standard criteria & Correct decimal commas in weights
-# ------------------------------------------------------------------
-# Standard criteria per conversione decimali
 CRITERI_STD = [
-    "Accessibilità del verde",
-    "Biodiversità",
-    "Manutenzione e pulizia",
-    "Funzione sociale",
-    "Funzione ambientale",
+    "Accessibilità del verde", "Biodiversità",
+    "Manutenzione e pulizia", "Funzione sociale", "Funzione ambientale"
 ]
-# Correggi decimali con virgola e converti a numerico
-df_pesi = fix_decimal_commas(df_pesi, CRITERI_STD)
-# Converte percentuali (0-100) in frazioni (0-1)
+# Citizen weights
+fix_decimal_commas(df_pesi, CRITERI_STD)
 df_pesi[CRITERI_STD] = df_pesi[CRITERI_STD] / 100
-
-# Green criteria: estrazione e conversione pesi
-auto_meta = {"Timestamp","Utente","Index","Persona"}
-criteri_green = [c for c in df_pesi_green.columns if c not in auto_meta]
-df_pesi_green = fix_decimal_commas(df_pesi_green, criteri_green)
-# Converte percentuali in frazioni
+# Green weights
+meta_cols = {"Timestamp","Utente","Index","Persona"}
+criteri_green = [c for c in df_pesi_green.columns if c not in meta_cols]
+fix_decimal_commas(df_pesi_green, criteri_green)
 df_pesi_green[criteri_green] = df_pesi_green[criteri_green] / 100
 
 # ------------------------------------------------------------------
-# 3️⃣ Sidebar filters
-# ------------------------------------------------------------------
+# 3️⃣ Sidebar Filters
 # ------------------------------------------------------------------
 st.sidebar.header("Filtri")
 page_sel = st.sidebar.radio("Vista:", [
@@ -100,20 +95,20 @@ page_sel = st.sidebar.radio("Vista:", [
     "📈 Analisi Aggregata", "🔀 Combina Green & Citizen",
     "📉 Correlazione Criteri", "📋 Tabella Completa"
 ])
+
 tav_sel = st.sidebar.selectbox(
     "Tavola rotonda:", ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist()
 )
 quart_sel = st.sidebar.selectbox(
     "Quartiere:", ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist()
 )
-# filter
 if tav_sel != "Tutte":
     mask = df_val["Tavola rotonda"] == tav_sel
     df_val = df_val[mask]
     df_pesi = df_pesi[mask]
 
 # ------------------------------------------------------------------
-# 4️⃣ Compute Standard scores
+# 4️⃣ Compute Citizen Scores
 # ------------------------------------------------------------------
 media_std = df_val.groupby("Parco")[CRITERI_STD].mean()
 std_std   = df_val.groupby("Parco")[CRITERI_STD].std()
@@ -123,54 +118,44 @@ map_df_std = (
     media_std.reset_index()
     .merge(df_info, left_on="Parco", right_on="Nome del Parco", how="inner")
 )
-map_df_std = to_numeric_df(map_df_std, ["Latitudine", "Longitudine"])
+map_df_std = to_numeric_df(map_df_std, ["Latitudine","Longitudine"])
 if quart_sel != "Tutti":
     map_df_std = map_df_std[map_df_std["Quartiere"]==quart_sel]
 
 # ------------------------------------------------------------------
-# 5️⃣ Compute Green scores
+# 5️⃣ Compute Green Scores
 # ------------------------------------------------------------------
-# Intersezione criteri green presenti nelle valutazioni
 criteri_green_eff = [c for c in criteri_green if c in df_val_green.columns]
-
-# Media dei voti per parco sui criteri effettivi
 media_green = df_val_green.groupby("Parco")[criteri_green_eff].mean()
-# Pesi solo per criteri effettivi
 pesi_green = df_pesi_green[criteri_green_eff].mean()
-
-# Merge con info e calcolo punteggio verde
 map_df_green = (
     df_info.merge(media_green, left_on="Nome del Parco", right_index=True, how="inner")
 )
 map_df_green["punteggio_green"] = (
-    map_df_green[criteri_green_eff].mul(pesi_green, axis=1).sum(axis=1)
+    map_df_green[criteri_green_eff].mul(pesi_green,axis=1).sum(axis=1)
 )
-map_df_green = to_numeric_df(map_df_green, ["Latitudine", "Longitudine"])
+map_df_green = to_numeric_df(map_df_green, ["Latitudine","Longitudine"])
 if quart_sel != "Tutti":
     map_df_green = map_df_green[map_df_green["Quartiere"]==quart_sel]
 
 # ------------------------------------------------------------------
-# Merge standard + green for combined analysis
+# 6️⃣ Merge for Combined Analysis
 # ------------------------------------------------------------------
 map_df_combi = map_df_std.merge(
-    map_df_green[['Nome del Parco','punteggio_green'] + criteri_green_eff],
-    on='Nome del Parco', how='inner'
+    map_df_green[["Nome del Parco","punteggio_green"]+criteri_green_eff],
+    on="Nome del Parco", how="inner"
 )
-# Rimuoviamo eventuali valori null e applichiamo filtro quartiere
-if quart_sel != 'Tutti':
-    map_df_combi = map_df_combi[map_df_combi['Quartiere']==quart_sel]
+if quart_sel != "Tutti":
+    map_df_combi = map_df_combi[map_df_combi["Quartiere"]==quart_sel]
 
-
-    map_df_green = map_df_green[map_df_green["Quartiere"]==quart_sel]
-
+# ------------------------------------------------------------------
+# 7️⃣ Render Pages
 # ------------------------------------------------------------------
 if page_sel == "📍 Mappa Punteggi":
     st.subheader("Mappa Citizen")
-    df = map_df_std.assign(
-        color = map_df_std['punteggio_std'].apply(
-            lambda p: [max(0,255-int(p*50)), min(255,int(p*50)),0,160]
-        ),
-        radius = map_df_std['punteggio_std'] * 50
+    df_map = map_df_std.assign(
+        color=map_df_std['punteggio_std'].apply(lambda p: [max(0,255-int(p*50)), min(255,int(p*50)),0,160]),
+        radius=map_df_std['punteggio_std']*50
     )
     st.pydeck_chart(
         pdk.Deck(
@@ -178,131 +163,88 @@ if page_sel == "📍 Mappa Punteggi":
             initial_view_state=pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13),
             layers=[
                 pdk.Layer(
-                    "ScatterplotLayer", df,
-                    get_position="[Longitudine, Latitudine]",
-                    get_fill_color="color", get_radius="radius",
-                    pickable=True
+                    'ScatterplotLayer', data=df_map,
+                    get_position='[Longitudine, Latitudine]',
+                    get_fill_color='color', get_radius='radius', pickable=True
                 )
             ],
-            tooltip={'text':'{Nome del Parco}
-Green: {punteggio_green:.2f}
-Citizen: {punteggio_std:.2f}
-Quadrante: {quadrante}'}\nCitizen: {punteggio_std:.2f}"}
+            tooltip={"text": "{Nome del Parco}\nCitizen: {punteggio_std:.2f}"}
         ), key='map_citizen'
     )
-
 elif page_sel == "📊 Classifica Parchi":
     st.subheader("Classifica Citizen")
     st.dataframe(
         map_df_std[['Nome del Parco','Quartiere','punteggio_std']]
         .sort_values('punteggio_std',ascending=False).round(2), key='table_citizen'
     )
-
 elif page_sel == "📈 Analisi Aggregata":
     st.subheader("Analisi Aggregata Citizen")
     avg = df_val[CRITERI_STD].mean()
-    fig = px.bar(x=CRITERI_STD,y=avg, labels={'x':'Criterio','y':'Media'})
-    st.plotly_chart(fig, use_container_width=True, key='bar_agg')
+    fig_bar = px.bar(x=CRITERI_STD,y=avg,labels={'x':'Criterio','y':'Media'})
+    st.plotly_chart(fig_bar,use_container_width=True,key='bar_agg')
     radar = go.Figure(go.Scatterpolar(
-        r=list(avg)+[avg.iloc[0]], theta=list(CRITERI_STD)+[CRITERI_STD[0]], fill='toself'
+        r=list(avg)+[avg.iloc[0]],
+        theta=list(CRITERI_STD)+[CRITERI_STD[0]],fill='toself'
     ))
-    radar.update_layout(polar=dict(radialaxis=dict(range=[0,5])), showlegend=False)
-    st.plotly_chart(radar, use_container_width=True, key='radar_agg')
-
+    radar.update_layout(polar=dict(radialaxis=dict(range=[0,5])),showlegend=False)
+    st.plotly_chart(radar,use_container_width=True,key='radar_agg')
 elif page_sel == "🔀 Combina Green & Citizen":
     st.subheader("Combinazione Green vs Citizen")
-    # Definizione mid-point e range fisso
     x_mid, y_mid = 2.5, 2.5
-    # Nomi personalizzati dei quadranti
     quadrant_names = {
-        'Top Right': 'Leader Sostenibili',
-        'Top Left': 'Verdi Puristi',
-        'Bottom Left': 'Critici Ecologici',
-        'Bottom Right': 'Cittadini Fedeli'
+        'Top Right':'Leader Sostenibili',
+        'Top Left':'Verdi Puristi',
+        'Bottom Left':'Critici Ecologici',
+        'Bottom Right':'Cittadini Fedeli'
     }
     def lbl(r):
-        x, y = r['punteggio_green'], r['punteggio_std']
-        if x >= x_mid and y >= y_mid:
-            return quadrant_names['Top Right']
-        if x < x_mid and y >= y_mid:
-            return quadrant_names['Top Left']
-        if x < x_mid and y < y_mid:
-            return quadrant_names['Bottom Left']
+        x,y=r['punteggio_green'],r['punteggio_std']
+        if x>=x_mid and y>=y_mid: return quadrant_names['Top Right']
+        if x< x_mid and y>=y_mid: return quadrant_names['Top Left']
+        if x< x_mid and y< y_mid: return quadrant_names['Bottom Left']
         return quadrant_names['Bottom Right']
-    map_df_combi['quadrante'] = map_df_combi.apply(lbl, axis=1)
-
-    # Scatter plot with fixed axes and custom quadrant labels
-    fig2 = px.scatter(
-        map_df_combi,
-        x='punteggio_green', y='punteggio_std',
+    map_df_combi['quadrante']=map_df_combi.apply(lbl,axis=1)
+    fig_sc = px.scatter(
+        map_df_combi, x='punteggio_green', y='punteggio_std',
         size='Manutenzione', color='quadrante', hover_name='Nome del Parco',
         labels={'punteggio_green':'Score Green','punteggio_std':'Citizen Score'},
-        category_orders={'quadrante': list(quadrant_names.values())}
+        category_orders={'quadrante':list(quadrant_names.values())}
     )
-    # Fisso range assi e linee di divisione
-    fig2.update_xaxes(range=[0, 5])
-    fig2.update_yaxes(range=[0, 5])
-    fig2.add_vline(x=x_mid, line_dash='dash', line_color='gray')
-    fig2.add_hline(y=y_mid, line_dash='dash', line_color='gray')
-    st.plotly_chart(fig2, use_container_width=True, key='scatter_combi', height=600)
-
-    # Mappa Combinata rimane invariata
+    fig_sc.update_xaxes(range=[0,5])
+    fig_sc.update_yaxes(range=[0,5])
+    fig_sc.add_vline(x=x_mid,line_dash='dash',line_color='gray')
+    fig_sc.add_hline(y=y_mid,line_dash='dash',line_color='gray')
+    st.plotly_chart(fig_sc,use_container_width=True,height=600,key='scatter_combi')
     st.subheader("Mappa Combinata")
-    dfm = map_df_combi.assign(
-        color_cit=map_df_combi['punteggio_std'].apply(
-            lambda p: [max(0,255-int(p*50)), min(255,int(p*50)), 0, 160]
-        ),
-        radius_green=map_df_combi['punteggio_green'] * 50
+    df_mapc = map_df_combi.assign(
+        color_cit=map_df_combi['punteggio_std'].apply(lambda p:[max(0,255-int(p*50)),min(255,int(p*50)),0,160]),
+        radius_green=map_df_combi['punteggio_green']*50
     )
     st.pydeck_chart(
         pdk.Deck(
             map_style='mapbox://styles/mapbox/outdoors-v11',
             initial_view_state=pdk.ViewState(latitude=45.6983, longitude=9.6773, zoom=13),
-            layers=[
-                pdk.Layer(
-                    'ScatterplotLayer', data=dfm,
-                    get_position='[Longitudine, Latitudine]',
-                    get_fill_color='color_cit',
-                    get_radius='radius_green', pickable=True
-                )
+            layers=[pdk.Layer('ScatterplotLayer',data=df_mapc,
+                get_position='[Longitudine, Latitudine]',
+                get_fill_color='color_cit',get_radius='radius_green',pickable=True)
             ],
-            tooltip={'text':'{Nome del Parco}
-Green: {punteggio_green:.2f}
-Citizen: {punteggio_std:.2f}
-Quadrante: {quadrante}'}
-Green: {punteggio_green:.2f}
-Citizen: {punteggio_std:.2f}
-Quadrante: {quadrante}"}
+            tooltip={"text":"{Nome del Parco}\nGreen: {punteggio_green:.2f}\nCitizen: {punteggio_std:.2f}\nQuadrante: {quadrante}"}
         ), key='map_combi'
     )
-
 elif page_sel == "📉 Correlazione Criteri":
     st.subheader("Correlazione Standard & Verde")
     c1 = df_val[CRITERI_STD].corr()
-    st.plotly_chart(
-        px.imshow(c1, text_auto=True, aspect='equal', color_continuous_scale='RdBu', zmin=-1, zmax=1),
-        key='corr1'
-    )
-    # Correlazione criteri green effettivi
+    st.plotly_chart(px.imshow(c1,text_auto=True,aspect='equal',color_continuous_scale='RdBu',zmin=-1,zmax=1),key='corr1')
     c2 = df_val_green[criteri_green_eff].corr()
-    st.plotly_chart(
-        px.imshow(c2, text_auto=True, aspect='equal', color_continuous_scale='RdBu', zmin=-1, zmax=1),
-        key='corr2'
-    )
-
+    st.plotly_chart(px.imshow(c2,text_auto=True,aspect='equal',color_continuous_scale='RdBu',zmin=-1,zmax=1),key='corr2')
 elif page_sel == "📋 Tabella Completa":
     st.subheader("Dati Grezzi")
     st.write("**Valutazioni Citizen**")
-    st.dataframe(df_val, key='raw_val')
+    st.dataframe(df_val,key='raw_val')
     st.write("**Valutazioni Verde**")
-    st.dataframe(df_val_green, key='raw_valg')
+    st.dataframe(df_val_green,key='raw_valg')
     st.write("**Pesi Citizen (0-1)**")
-    # Mostra solo i criteri standard, arrotondati a 2 decimali
-    st.dataframe(df_pesi[CRITERI_STD].round(2), key='raw_pesi')
+    st.dataframe(df_pesi[CRITERI_STD].round(2),key='raw_pesi')
     st.write("**Pesi Verde (0-1)**")
-    # Mostra solo i criteri green effettivi, arrotondati a 2 decimali
-    st.dataframe(df_pesi_green[criteri_green_eff].round(2), key='raw_pesig')
-
-
-
+    st.dataframe(df_pesi_green[criteri_green_eff].round(2),key='raw_pesig')
 
