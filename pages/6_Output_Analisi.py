@@ -67,24 +67,32 @@ df_val.rename(columns=rename_map, inplace=True)
 df_pesi.rename(columns=rename_map, inplace=True)
 
 # ------------------------------------------------------------------
-# 2️⃣ Correct decimal commas in weights
 # ------------------------------------------------------------------
+# 2️⃣ Define standard criteria & Correct decimal commas in weights
+# ------------------------------------------------------------------
+# Standard criteria per conversione decimali
+CRITERI_STD = [
+    "Accessibilità del verde",
+    "Biodiversità",
+    "Manutenzione e pulizia",
+    "Funzione sociale",
+    "Funzione ambientale",
+]
+# Correggi decimali con virgola e converti a numerico
 df_pesi = fix_decimal_commas(df_pesi, CRITERI_STD)
 # Converte percentuali (0-100) in frazioni (0-1)
 df_pesi[CRITERI_STD] = df_pesi[CRITERI_STD] / 100
 
-# green criteria
-meta_cols = {"Timestamp", "Utente", "Index", "Persona"}
-criteri_green = [c for c in df_pesi_green.columns if c not in meta_cols]
+# Green criteria: estrazione e conversione pesi
+auto_meta = {"Timestamp","Utente","Index","Persona"}
+criteri_green = [c for c in df_pesi_green.columns if c not in auto_meta]
 df_pesi_green = fix_decimal_commas(df_pesi_green, criteri_green)
-# Converte percentuali (0-100) in frazioni (0-1)
+# Converte percentuali in frazioni
 df_pesi_green[criteri_green] = df_pesi_green[criteri_green] / 100
-meta_cols = {"Timestamp", "Utente", "Index", "Persona"}
-criteri_green = [c for c in df_pesi_green.columns if c not in meta_cols]
-df_pesi_green = fix_decimal_commas(df_pesi_green, criteri_green)
 
 # ------------------------------------------------------------------
 # 3️⃣ Sidebar filters
+# ------------------------------------------------------------------
 # ------------------------------------------------------------------
 st.sidebar.header("Filtri")
 page_sel = st.sidebar.radio("Vista:", [
@@ -239,5 +247,6 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi,key='raw_pesi')
     st.write("**Pesi Verde**")
     st.dataframe(df_pesi_green,key='raw_pesig')
+
 
 
