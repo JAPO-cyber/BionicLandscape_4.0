@@ -273,6 +273,21 @@ elif page_sel == "🕒 Evoluzione nel tempo":
     df_time['score'] = df_time[CRITERI_STD].mul(pesi_std, axis=1).sum(axis=1)
     # Raggruppa per settimana
     weekly = df_time.groupby('YearWeek')['score'].mean().reset_index()
+    # Genera dati sintetici per 3 settimane aggiuntive
+    import numpy as np
+    # Data dell'ultima settimana disponibile
+    last_date = pd.to_datetime(weekly['YearWeek'].iloc[-1] + '-1', format='%Y-W%V-%w')
+    # 3 date settimanali future (lunedì)
+    future_dates = pd.date_range(start=last_date + pd.Timedelta(days=7), periods=3, freq='W-MON')
+    future_weeks = [d.strftime('%Y-W%V') for d in future_dates]
+    # Punteggio di base: ultimo valore medio
+    base_score = weekly['score'].iloc[-1]
+    synthetic = pd.DataFrame({
+        'YearWeek': future_weeks,
+        'score': base_score + np.random.normal(0, 0.1, size=len(future_weeks))
+    })
+    # Aggiunge al DataFrame settimanale
+    weekly = pd.concat([weekly, synthetic], ignore_index=True)
     # Statistiche di controllo (Individuals Chart)
     mu = weekly['score'].mean()
     sigma = weekly['score'].std()
@@ -326,6 +341,5 @@ elif page_sel == "🕒 Evoluzione nel tempo":
             st.error(f"Errore nel modello di previsione: {e}")
     else:
         st.info("Non ci sono dati sufficienti per la previsione. Servono almeno 3 settimane di dati.")
-
 
 
