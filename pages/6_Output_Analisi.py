@@ -184,7 +184,10 @@ if page_sel == "📍 Mappa Punteggi":
                     pickable=True
                 )
             ],
-            tooltip={"text":"{Nome del Parco}\nCitizen: {punteggio_std:.2f}"}
+            tooltip={'text':'{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'}\nCitizen: {punteggio_std:.2f}"}
         ), key='map_citizen'
     )
 
@@ -263,7 +266,10 @@ elif page_sel == "🔀 Combina Green & Citizen":
                     get_radius='radius_green', pickable=True
                 )
             ],
-            tooltip={"text":"{Nome del Parco}
+            tooltip={'text':'{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'}
 Green: {punteggio_green:.2f}
 Citizen: {punteggio_std:.2f}
 Quadrante: {quadrante}"}
@@ -277,17 +283,12 @@ elif page_sel == "📉 Correlazione Criteri":
         px.imshow(c1, text_auto=True, aspect='equal', color_continuous_scale='RdBu', zmin=-1, zmax=1),
         key='corr1'
     )
-    # correlazione sui criteri effettivi del verde
+    # Correlazione criteri green effettivi
     c2 = df_val_green[criteri_green_eff].corr()
     st.plotly_chart(
         px.imshow(c2, text_auto=True, aspect='equal', color_continuous_scale='RdBu', zmin=-1, zmax=1),
         key='corr2'
     )
-    st.subheader("Correlazione Standard & Verde")
-    c1=df_val[CRITERI_STD].corr()
-    st.plotly_chart(px.imshow(c1,text_auto=True,aspect='equal',color_continuous_scale='RdBu',zmin=-1,zmax=1),key='corr1')
-    c2=df_val_green[criteri_green].corr()
-    st.plotly_chart(px.imshow(c2,text_auto=True,aspect='equal',color_continuous_scale='RdBu',zmin=-1,zmax=1),key='corr2')
 
 elif page_sel == "📋 Tabella Completa":
     st.subheader("Dati Grezzi")
