@@ -69,12 +69,16 @@ df_pesi.rename(columns=rename_map, inplace=True)
 # ------------------------------------------------------------------
 # 2️⃣ Correct decimal commas in weights
 # ------------------------------------------------------------------
-CRITERI_STD = [
-    "Accessibilità del verde", "Biodiversità",
-    "Manutenzione e pulizia", "Funzione sociale", "Funzione ambientale"
-]
 df_pesi = fix_decimal_commas(df_pesi, CRITERI_STD)
+# Converte percentuali (0-100) in frazioni (0-1)
+df_pesi[CRITERI_STD] = df_pesi[CRITERI_STD] / 100
+
 # green criteria
+meta_cols = {"Timestamp", "Utente", "Index", "Persona"}
+criteri_green = [c for c in df_pesi_green.columns if c not in meta_cols]
+df_pesi_green = fix_decimal_commas(df_pesi_green, criteri_green)
+# Converte percentuali (0-100) in frazioni (0-1)
+df_pesi_green[criteri_green] = df_pesi_green[criteri_green] / 100
 meta_cols = {"Timestamp", "Utente", "Index", "Persona"}
 criteri_green = [c for c in df_pesi_green.columns if c not in meta_cols]
 df_pesi_green = fix_decimal_commas(df_pesi_green, criteri_green)
