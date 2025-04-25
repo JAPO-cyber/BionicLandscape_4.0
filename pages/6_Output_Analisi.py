@@ -206,7 +206,11 @@ elif page_sel == "📍 Mappa Punteggi":
                           get_fill_color='color',
                           get_radius='radius', pickable=True)
             ],
-            tooltip={'text': '{Nome del Parco}
+            tooltip={'text':'{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'}
+Citizen: {punteggio_std:.2f}'}
 Citizen: {punteggio_std:.2f}'}
         ), key='map_citizen'
     )
@@ -304,3 +308,4 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi_f)
     st.markdown("**Pesi Verde**")
     st.dataframe(df_pesi_green)
+
