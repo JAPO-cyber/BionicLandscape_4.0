@@ -302,24 +302,30 @@ elif page_sel == "🕒 Evoluzione nel tempo":
     fig_mr.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Moving Range', height=300)
     st.plotly_chart(fig_mr, use_container_width=True, key='mr_chart')
 
-    # Previsione con Exponential Smoothing
-    from statsmodels.tsa.holtwinters import ExponentialSmoothing
-    # Modello senza stagionalità
-    model = ExponentialSmoothing(weekly['score'], trend='add', seasonal=None)
-    fit = model.fit(optimized=True)
-    forecast_periods = 8  # settimane future
-    pred = fit.forecast(forecast_periods)
-    # Prepara dati di previsione
-    future_idx = pd.date_range(start=weekly['YearWeek'].iloc[-1] + '-1', periods=forecast_periods, freq='W-MON')
-    future_weeks = [d.strftime('%Y-W%V') for d in future_idx]
-    df_pred = pd.DataFrame({'YearWeek': future_weeks, 'forecast': pred.values})
+        # Previsione con Exponential Smoothing (solo se dati sufficienti)
+    if len(weekly) >= 3:
+        from statsmodels.tsa.holtwinters import ExponentialSmoothing
+        try:
+            model = ExponentialSmoothing(weekly['score'], trend='add', seasonal=None)
+            fit = model.fit(optimized=True)
+            forecast_periods = 8  # settimane future
+            pred = fit.forecast(forecast_periods)
+            # Prepara dati di previsione
+            last = pd.to_datetime(weekly['YearWeek'].iloc[-1] + '-1', format='%Y-W%V-%w')
+            future_idx = pd.date_range(start=last + pd.Timedelta(days=7), periods=forecast_periods, freq='W-MON')
+            future_weeks = [d.strftime('%Y-W%V') for d in future_idx]
+            df_pred = pd.DataFrame({'YearWeek': future_weeks, 'forecast': pred.values})
+            # Visualizza previsione
+            st.subheader("Previsione punteggio futuro")
+            fig_fc = go.Figure()
+            fig_fc.add_trace(go.Scatter(x=weekly['YearWeek'], y=weekly['score'], mode='lines+markers', name='Storico'))
+            fig_fc.add_trace(go.Scatter(x=df_pred['YearWeek'], y=df_pred['forecast'], mode='lines+markers', name='Previsione'))
+            fig_fc.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Score', height=400)
+            st.plotly_chart(fig_fc, use_container_width=True, key='forecast_chart')
+        except Exception as e:
+            st.error(f"Errore nel modello di previsione: {e}")
+    else:
+        st.info("Non ci sono dati sufficienti per la previsione. Servono almeno 3 settimane di dati.")
 
-    # Visualizza previsione
-    st.subheader("Previsione punteggio futuro")
-    fig_fc = go.Figure()
-    fig_fc.add_trace(go.Scatter(x=weekly['YearWeek'], y=weekly['score'], mode='lines+markers', name='Storico'))
-    fig_fc.add_trace(go.Scatter(x=df_pred['YearWeek'], y=df_pred['forecast'], mode='lines+markers', name='Previsione'))
-    fig_fc.update_layout(xaxis_tickangle=-45, xaxis_title='Settimana', yaxis_title='Score', height=400)
-    st.plotly_chart(fig_fc, use_container_width=True, key='forecast_chart')
 
 
