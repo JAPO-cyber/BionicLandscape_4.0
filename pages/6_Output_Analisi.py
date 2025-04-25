@@ -150,6 +150,20 @@ if quart_sel != "Tutti":
     map_df_green = map_df_green[map_df_green["Quartiere"]==quart_sel]
 
 # ------------------------------------------------------------------
+# Merge standard + green for combined analysis
+# ------------------------------------------------------------------
+map_df_combi = map_df_std.merge(
+    map_df_green[['Nome del Parco','punteggio_green'] + criteri_green_eff],
+    on='Nome del Parco', how='inner'
+)
+# Rimuoviamo eventuali valori null e applichiamo filtro quartiere
+if quart_sel != 'Tutti':
+    map_df_combi = map_df_combi[map_df_combi['Quartiere']==quart_sel]
+
+
+    map_df_green = map_df_green[map_df_green["Quartiere"]==quart_sel]
+
+# ------------------------------------------------------------------
 if page_sel == "📍 Mappa Punteggi":
     st.subheader("Mappa Citizen")
     df = map_df_std.assign(
@@ -232,6 +246,18 @@ elif page_sel == "🔀 Combina Green & Citizen":
 
 elif page_sel == "📉 Correlazione Criteri":
     st.subheader("Correlazione Standard & Verde")
+    c1 = df_val[CRITERI_STD].corr()
+    st.plotly_chart(
+        px.imshow(c1, text_auto=True, aspect='equal', color_continuous_scale='RdBu', zmin=-1, zmax=1),
+        key='corr1'
+    )
+    # correlazione sui criteri effettivi del verde
+    c2 = df_val_green[criteri_green_eff].corr()
+    st.plotly_chart(
+        px.imshow(c2, text_auto=True, aspect='equal', color_continuous_scale='RdBu', zmin=-1, zmax=1),
+        key='corr2'
+    )
+    st.subheader("Correlazione Standard & Verde")
     c1=df_val[CRITERI_STD].corr()
     st.plotly_chart(px.imshow(c1,text_auto=True,aspect='equal',color_continuous_scale='RdBu',zmin=-1,zmax=1),key='corr1')
     c2=df_val_green[criteri_green].corr()
@@ -240,13 +266,15 @@ elif page_sel == "📉 Correlazione Criteri":
 elif page_sel == "📋 Tabella Completa":
     st.subheader("Dati Grezzi")
     st.write("**Valutazioni Citizen**")
-    st.dataframe(df_val,key='raw_val')
+    st.dataframe(df_val, key='raw_val')
     st.write("**Valutazioni Verde**")
-    st.dataframe(df_val_green,key='raw_valg')
-    st.write("**Pesi Citizen**")
-    st.dataframe(df_pesi,key='raw_pesi')
-    st.write("**Pesi Verde**")
-    st.dataframe(df_pesi_green,key='raw_pesig')
+    st.dataframe(df_val_green, key='raw_valg')
+    st.write("**Pesi Citizen (0-1)**")
+    # Mostra solo i criteri standard, arrotondati a 2 decimali
+    st.dataframe(df_pesi[CRITERI_STD].round(2), key='raw_pesi')
+    st.write("**Pesi Verde (0-1)**")
+    # Mostra solo i criteri green effettivi, arrotondati a 2 decimali
+    st.dataframe(df_pesi_green[criteri_green_eff].round(2), key='raw_pesig')
 
 
 
