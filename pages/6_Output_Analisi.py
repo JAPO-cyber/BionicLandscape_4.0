@@ -100,6 +100,53 @@ elif page_sel=="📈 Analisi Aggregata":
 # Combina
 elif page_sel=="🔀 Combina Green & Citizen":
     st.subheader("Combinazione Green vs Citizen")
+    x_mid,y_mid=2.5,2.5
+    # Nuovi nomi quadranti
+    quadrant_names={
+        'Top Right':'Priorità condivisa',
+        'Top Left':'Valore Sociale',
+        'Bottom Left':'Rischio Strategico',
+        'Bottom Right':'Tensione ecologica'
+    }
+    map_df_combi['quadrante']=map_df_combi.apply(
+        lambda r: quadrant_names['Top Right']     if r['punteggio_green']>=x_mid and r['punteggio_std']>=y_mid else
+                  quadrant_names['Top Left']      if r['punteggio_green']< x_mid and r['punteggio_std']>=y_mid else
+                  quadrant_names['Bottom Left']   if r['punteggio_green']< x_mid and r['punteggio_std']< y_mid else
+                  quadrant_names['Bottom Right'], axis=1)
+    fig=px.scatter(
+        map_df_combi, x='punteggio_green', y='punteggio_std',
+        size='Manutenzione', color='quadrante', hover_name='Nome del Parco',
+        labels={'punteggio_green':'Score Green','punteggio_std':'Citizen Score'},
+        category_orders={'quadrante': list(quadrant_names.values())}
+    )
+    fig.update_xaxes(range=[0,5]); fig.update_yaxes(range=[0,5])
+    fig.add_vline(x=x_mid, line_dash='dash', line_color='gray'); fig.add_hline(y=y_mid, line_dash='dash', line_color='gray')
+    st.plotly_chart(fig, use_container_width=True, height=600, key='scatter_combi')
+    st.subheader("Mappa Combinata")
+    dfc=map_df_combi.assign(
+        color_cit=map_df_combi['punteggio_std'].apply(lambda p:[max(0,255-int(p*50)),min(255,int(p*50)),0,160]),
+        radius_green=map_df_combi['punteggio_green']*50
+    )
+    # Tooltip corretto con escape 
+
+    tooltip_text = '{Nome del Parco}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'
+    st.pydeck_chart(
+        pdk.Deck(
+            map_style='mapbox://styles/mapbox/outdoors-v11',
+            initial_view_state=pdk.ViewState(45.6983,9.6773,13),
+            layers=[pdk.Layer(
+                'ScatterplotLayer', data=dfc,
+                get_position='[Longitudine, Latitudine]',
+                get_fill_color='color_cit', get_radius='radius_green', pickable=True
+            )],
+            tooltip={'text': tooltip_text}
+        ), key='map_combi'
+    )
+elif page_sel=="🔀 Combina Green & Citizen":
+    st.subheader("Combinazione Green vs Citizen")
     x_mid,y_mid=2.5,2.5; quadrant_names={'Top Right':'Leader Sostenibili','Top Left':'Verdi Puristi','Bottom Left':'Critici Ecologici','Bottom Right':'Cittadini Fedeli'}
     map_df_combi['quadrante']=map_df_combi.apply(lambda r: quadrant_names['Top Right'] if r['punteggio_green']>=x_mid and r['punteggio_std']>=y_mid else quadrant_names['Top Left'] if r['punteggio_green']<x_mid and r['punteggio_std']>=y_mid else quadrant_names['Bottom Left'] if r['punteggio_green']<x_mid and r['punteggio_std']<y_mid else quadrant_names['Bottom Right'], axis=1)
     fig=px.scatter(map_df_combi, x='punteggio_green',y='punteggio_std', size='Manutenzione', color='quadrante', hover_name='Nome del Parco', labels={'punteggio_green':'Score Green','punteggio_std':'Citizen Score'}, category_orders={'quadrante':list(quadrant_names.values())})
@@ -126,4 +173,5 @@ elif page_sel=="📋 Tabella Completa":
     st.write("**Valutazioni Verde**"); st.dataframe(df_val_green, key='raw_valg')
     st.write("**Pesi Citizen (0-1)**"); st.dataframe(df_pesi[CRITERI_STD].round(2), key='raw_pesi')
     st.write("**Pesi Verde (0-1)**"); st.dataframe(df_pesi_green[criteri_green_eff].round(2), key='raw_pesig')
+
 
