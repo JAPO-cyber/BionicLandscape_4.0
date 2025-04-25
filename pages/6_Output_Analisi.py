@@ -89,11 +89,6 @@ if quart_sel != "Tutti":
     df_val = df_val[df_val["Quartiere"] == quart_sel]
     df_pesi = df_pesi[df_pesi["Quartiere"] == quart_sel]
 
-# -------------------- Compute Citizen Score -------------------- st.sidebar.selectbox(
-     "Quartiere:",
-     ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist()
- )
-
 # -------------------- Compute Citizen Score --------------------
 media_std = df_val.groupby("Parco")[CRITERI_STD].mean()
 pesi_std = df_pesi[CRITERI_STD].mean()
@@ -331,3 +326,4 @@ elif page_sel == "🕒 Evoluzione nel tempo":
             st.error(f"Errore nel modello di previsione: {e}")
     else:
         st.info("Non ci sono dati sufficienti per la previsione. Servono almeno 3 settimane di dati.")
+
