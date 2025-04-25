@@ -211,6 +211,10 @@ Green: {punteggio_green:.2f}
 Citizen: {punteggio_std:.2f}
 Quadrante: {quadrante}'}
 Citizen: {punteggio_std:.2f}'}
+Green: {punteggio_green:.2f}
+Citizen: {punteggio_std:.2f}
+Quadrante: {quadrante}'}
+Citizen: {punteggio_std:.2f}'}
 Citizen: {punteggio_std:.2f}'}
         ), key='map_citizen'
     )
