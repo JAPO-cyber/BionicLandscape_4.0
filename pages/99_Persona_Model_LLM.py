@@ -90,16 +90,18 @@ with tab2:
     obiettivi = df["Obiettivo"].dropna().tolist()
 
     prompt = f"""
-    Sei un'unità di pianificazione del verde del Comune e stai raccogliendo input dai cittadini tramite questionari.
-    Di seguito trovi due elenchi di risposte aperte:
-    - Motivazioni dei cittadini alla partecipazione: {motivazioni}
-    - Obiettivi che i cittadini vorrebbero raggiungere: {obiettivi}
+    Sei un'unità di pianificazione del verde del Comune di Bergamo. 
+    Hai raccolto due liste di risposte dai cittadini:
 
-    Ti chiedo di:
-    1. Individuare le voci più frequenti tra motivazioni e obiettivi combinati, fornendo una classifica in stile Pareto (voce + frequenza).
-    2. Classificare le principali voci nelle categorie di un diagramma di Ishikawa (Causa-Effetto), es. Metodi, Persone, Ambiente, Strumenti, Processi, ecc.
+    - **Motivazioni**: {motivazioni}
+    - **Obiettivi**: {obiettivi}
 
-    Rispondi in formato JSON come segue:
+    Unisci questi due elenchi e analizzali per:
+    1. Identificare le voci più frequenti (in ordine decrescente) sotto forma di analisi Pareto. Restituisci una lista di oggetti con chiavi "voce" e "frequenza".
+    2. Classificare le voci più ricorrenti secondo le categorie di un Diagramma di Ishikawa (es. Metodi, Persone, Ambiente, Strumenti, Processi, ecc.). 
+
+    ⚠️ Rispondi **solo** con un oggetto JSON **valido**, senza testo aggiuntivo, spiegazioni o blocchi markdown. 
+    Formato atteso:
     {{
         "pareto": [{{"voce": "...", "frequenza": ...}}, ...],
         "ishikawa": {{
@@ -119,21 +121,27 @@ with tab2:
             model="gemini-2.0-flash",
             contents=prompt
         )
+
+        raw_text = response.text
+        cleaned_text = re.sub(r"```json|```", "", raw_text).strip()
+
         try:
-            result = eval(response.text)
-            # Grafico Pareto
+            result = json.loads(cleaned_text)
+
+            # 🔹 Grafico Pareto
             pareto_df = pd.DataFrame(result["pareto"])
             fig_pareto = px.bar(pareto_df, x="voce", y="frequenza",
                                 title="🔢 Analisi Pareto – Motivazioni e Obiettivi",
                                 labels={"voce": "Voce", "frequenza": "Frequenza"})
             st.plotly_chart(fig_pareto)
 
-            # Tabella Ishikawa
+            # 🔹 Tabella Ishikawa
             st.markdown("### 🧩 Categorizzazione secondo il Diagramma di Ishikawa")
             for categoria, cause in result["ishikawa"].items():
                 st.markdown(f"**{categoria}**")
                 st.write(", ".join(cause))
 
-        except Exception as e:
-            st.error("❌ Errore nell'interpretazione della risposta di Gemini.")
+        except json.JSONDecodeError as e:
+            st.error("❌ Il formato restituito da Gemini non è un JSON valido.")
+            st.code(cleaned_text)
             st.exception(e)
