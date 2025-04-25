@@ -76,18 +76,15 @@ page_sel = st.sidebar.radio("Vista:", [
     "📈 Analisi Aggregata", "🔀 Combina Green & Citizen",
     "📉 Correlazione Criteri", "📋 Tabella Completa", "🕒 Evoluzione nel tempo"
 ])
-tav_sel = st.sidebar.selectbox(
-    "Tavola rotonda:",
-    ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist()
-)
-quart_sel = st.sidebar.selectbox(
-    "Quartiere:",
-    ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist()
-)
-if tav_sel != "Tutte":
-    mask = df_val["Tavola rotonda"] == tav_sel
-    df_val = df_val[mask]
-    df_pesi = df_pesi[mask]
+# Disabilitiamo il filtro "Tavola rotonda" per il momento
+# tav_sel = st.sidebar.selectbox(
+#     "Tavola rotonda:",
+#     ["Tutte"] + df_val["Tavola rotonda"].dropna().unique().tolist()
+# )
+ quart_sel = st.sidebar.selectbox(
+     "Quartiere:",
+     ["Tutti"] + df_info["Quartiere"].dropna().unique().tolist()
+ )
 
 # -------------------- Compute Citizen Score --------------------
 media_std = df_val.groupby("Parco")[CRITERI_STD].mean()
@@ -265,6 +262,11 @@ elif page_sel == "📋 Tabella Completa":
 # Evoluzione nel tempo
 elif page_sel == "🕒 Evoluzione nel tempo":
     st.subheader("Evoluzione temporale del punteggio Citizen")
+    # Applica filtro quartiere anche ai dati temporali
+    df_time = df_val.copy()
+    if quart_sel != "Tutti":
+        df_time = df_time[df_time["Quartiere"] == quart_sel]
+    # Prepara dati temporali("Evoluzione temporale del punteggio Citizen")
     # Prepara dati temporali
     df_time = df_val.copy()
     df_time['Timestamp'] = pd.to_datetime(df_time['Timestamp'], dayfirst=True)
@@ -326,4 +328,3 @@ elif page_sel == "🕒 Evoluzione nel tempo":
             st.error(f"Errore nel modello di previsione: {e}")
     else:
         st.info("Non ci sono dati sufficienti per la previsione. Servono almeno 3 settimane di dati.")
-
