@@ -62,6 +62,25 @@ df_pesi.rename(columns={
 # ------------------------------------------------------------------
 # Correzione decimali: sostituisci virgola con punto nei pesi
 # ------------------------------------------------------------------
+# Definiamo criteri standard prima di applicare la correzione
+CRITERI_STD = [
+    "Accessibilità del verde", "Biodiversità",
+    "Manutenzione e pulizia", "Funzione sociale", "Funzione ambientale"
+]
+
+def fix_decimal_commas(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    for c in cols:
+        # Sostituisci ',' con '.' e converti a numerico
+        df[c] = df[c].astype(str).str.replace(',', '.', regex=False)
+        df[c] = pd.to_numeric(df[c], errors='coerce')
+    return df
+
+# Applica correzione sui pesi citizen (criteri standard)
+df_pesi = fix_decimal_commas(df_pesi, CRITERI_STD)
+# Applica correzione sui pesi green (tutti i criteri rilevanti)
+cols_green = [c for c in df_pesi_green.columns if c not in {"Timestamp","Utente","Index","Persona"}]
+df_pesi_green = fix_decimal_commas(df_pesi_green, cols_green)
+
 def fix_decimal_commas(df: pd.DataFrame, cols: list[str]):
     for c in cols:
         df[c] = df[c].astype(str).str.replace(',', '.', regex=False)
@@ -285,6 +304,3 @@ elif page_sel == "📋 Tabella Completa":
     st.dataframe(df_pesi_f)
     st.markdown("**Pesi Verde**")
     st.dataframe(df_pesi_green)
-
-
-
