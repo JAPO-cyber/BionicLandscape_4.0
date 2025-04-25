@@ -118,28 +118,25 @@ if quart_sel != "Tutti":
 # ------------------------------------------------------------------
 # 5️⃣ Compute Green scores
 # ------------------------------------------------------------------
-media_green = df_val_green.groupby("Parco")[criteri_green].mean()
-pesi_green = df_pesi_green[criteri_green].mean()
+# Intersezione criteri green presenti nelle valutazioni
+criteri_green_eff = [c for c in criteri_green if c in df_val_green.columns]
+
+# Media dei voti per parco sui criteri effettivi
+media_green = df_val_green.groupby("Parco")[criteri_green_eff].mean()
+# Pesi solo per criteri effettivi
+pesi_green = df_pesi_green[criteri_green_eff].mean()
+
+# Merge con info e calcolo punteggio verde
 map_df_green = (
     df_info.merge(media_green, left_on="Nome del Parco", right_index=True, how="inner")
 )
 map_df_green["punteggio_green"] = (
-    map_df_green[criteri_green].mul(pesi_green).sum(axis=1)
+    map_df_green[criteri_green_eff].mul(pesi_green, axis=1).sum(axis=1)
 )
 map_df_green = to_numeric_df(map_df_green, ["Latitudine", "Longitudine"])
 if quart_sel != "Tutti":
     map_df_green = map_df_green[map_df_green["Quartiere"]==quart_sel]
 
-# ------------------------------------------------------------------
-# 6️⃣ Merge combined
-# ------------------------------------------------------------------
-map_df_combi = map_df_std.merge(
-    map_df_green[["Nome del Parco","punteggio_green"] + criteri_green],
-    on="Nome del Parco", how="inner"
-)
-
-# ------------------------------------------------------------------
-# 7️⃣ Render pages
 # ------------------------------------------------------------------
 if page_sel == "📍 Mappa Punteggi":
     st.subheader("Mappa Citizen")
