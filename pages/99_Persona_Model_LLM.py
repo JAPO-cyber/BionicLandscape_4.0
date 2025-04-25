@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from kmodes.kprototypes import KPrototypes
 from lib.google_sheet import get_sheet_by_name
 import re
@@ -110,7 +111,15 @@ Restituisci i risultati in questo formato JSON:
 Costruisci un diagramma di Ishikawa (Causa-Effetto) partendo dalla domanda centrale:
 **"Perché i cittadini non si sentono pienamente coinvolti nella progettazione e gestione del verde urbano?"**
 
-Raggruppa le cause in massimo 6 categorie (es. Metodi, Persone, Strumenti, Ambiente, Comunicazione, Processi), ciascuna con una lista di 3–6 cause ricorrenti emerse nei commenti.
+Utilizza esclusivamente le **categorie standard** del diagramma di Ishikawa, ovvero:
+- Metodi
+- Mezzi
+- Materiali
+- Persone
+- Ambiente
+- Misurazioni
+
+Per ciascuna categoria, identifica da 3 a 6 cause ricorrenti emerse nei commenti.
 
 ⚠️ Rispondi solo con un oggetto JSON valido, senza testo descrittivo né blocchi markdown.
 
@@ -118,8 +127,12 @@ Formato atteso finale:
 {{
   "pareto": [...],
   "ishikawa": {{
-    "Categoria1": [...],
-    ...
+    "Metodi": [...],
+    "Mezzi": [...],
+    "Materiali": [...],
+    "Persone": [...],
+    "Ambiente": [...],
+    "Misurazioni": [...]
   }}
 }}
 """
@@ -139,20 +152,42 @@ Formato atteso finale:
         try:
             result = json.loads(cleaned_text)
 
-            # 🔹 Grafico Pareto
+            # --- PARETO ---
             pareto_df = pd.DataFrame(result["pareto"])
-            fig_pareto = px.bar(
-                pareto_df, x="tema", y="frequenza",
-                title="🔢 Analisi Pareto – Richieste principali dei cittadini",
-                labels={"tema": "Tema", "frequenza": "Frequenza"}
-            )
-            st.plotly_chart(fig_pareto)
+            pareto_df = pareto_df.sort_values(by="frequenza", ascending=False).reset_index(drop=True)
+            pareto_df["% cumulata"] = pareto_df["frequenza"].cumsum() / pareto_df["frequenza"].sum() * 100
 
-            # 🔹 Tabella Ishikawa
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=pareto_df["tema"], y=pareto_df["frequenza"], name="Frequenza"))
+            fig.add_trace(go.Scatter(x=pareto_df["tema"], y=pareto_df["% cumulata"],
+                                     name="% Cumulata", yaxis="y2", mode="lines+markers"))
+
+            fig.add_shape(
+                type="line",
+                x0=-0.5, x1=len(pareto_df) - 0.5,
+                y0=80, y1=80,
+                yref="y2",
+                line=dict(color="red", dash="dash"),
+                name="80%"
+            )
+
+            fig.update_layout(
+                title="📈 Diagramma di Pareto – Richieste principali",
+                xaxis=dict(title="Temi"),
+                yaxis=dict(title="Frequenza"),
+                yaxis2=dict(title="% Cumulata", overlaying="y", side="right", range=[0, 100]),
+                legend=dict(x=0.8, y=1.2),
+                bargap=0.2
+            )
+            st.plotly_chart(fig)
+
+            # --- ISHIKAWA ---
             st.markdown("### 🧩 Categorizzazione secondo il Diagramma di Ishikawa")
-            for categoria, cause in result["ishikawa"].items():
-                st.markdown(f"**{categoria}**")
-                st.write(", ".join(cause))
+            for categoria in ["Metodi", "Mezzi", "Materiali", "Persone", "Ambiente", "Misurazioni"]:
+                cause = result["ishikawa"].get(categoria, [])
+                if cause:
+                    st.markdown(f"**{categoria}**")
+                    st.write(", ".join(cause))
 
         except json.JSONDecodeError as e:
             st.error("❌ Il formato restituito da Gemini non è un JSON valido.")
