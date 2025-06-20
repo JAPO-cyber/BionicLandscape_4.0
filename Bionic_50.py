@@ -3,6 +3,7 @@ import unicodedata
 import logging
 import streamlit as st
 from lib.style import apply_custom_style
+from lib.navigation import render_sidebar_navigation
 
 # ─── Costanti Pagine (statiche) ───────────────────────────────────────────
 PAGE_TITLE = "LOTUS App"
@@ -27,12 +28,8 @@ QUARTIERI = [
 # Opzioni: "Streamlit Secrets" o "Google Secret Manager"
 SECRET_METHOD = "Streamlit Secrets"
 
-# ─── Pagine Accesso per ruolo ─────────────────────────────────────────────
-PAGES_ACCESS = {
-    'utente': ['1_Registrazione'],
-    'amministrazione': ['2_Amministrazione'],
-    'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
-}
+# ─── Import navigazione e mapping pagine ─────────────────────────────────
+from lib.navigation import render_sidebar_navigation, PAGES_ACCESS
 
 # ─── Funzione per recuperare segreti ───────────────────────────────────────
 def get_secret(key: str) -> str:
@@ -53,6 +50,8 @@ def get_secret(key: str) -> str:
 # ─── Configurazione Streamlit e applicazione stile ─────────────────────────
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
+# ─── Sidebar di navigazione ─────────────────────────────────────────────────
+render_sidebar_navigation()
 
 # ─── Logging setup ─────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -89,24 +88,25 @@ if not st.session_state.logged_in:
                 st.query_params = {"page": PAGES_ACCESS['ADMIN'][0]}
                 st.rerun()
             # 2) amministrazione
-            if username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
+            elif username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = 'amministrazione'
                 st.session_state.quartiere = None
                 st.query_params = {"page": PAGES_ACCESS['amministrazione'][0]}
                 st.rerun()
             # 3) utente quartiere
-            raw = unicodedata.normalize('NFD', selected_quartiere)
-            safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
-            pw_key = f"PW_{safe}"
-            if password and password == get_secret(pw_key):
-                st.session_state.logged_in = True
-                st.session_state.role = 'utente'
-                st.session_state.quartiere = selected_quartiere
-                st.query_params = {"page": PAGES_ACCESS['utente'][0]}
-                st.rerun()
             else:
-                st.error("❌ Credenziali o password non valide")
+                raw = unicodedata.normalize('NFD', selected_quartiere)
+                safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
+                pw_key = f"PW_{safe}"
+                if password == get_secret(pw_key) and password:
+                    st.session_state.logged_in = True
+                    st.session_state.role = 'utente'
+                    st.session_state.quartiere = selected_quartiere
+                    st.query_params = {"page": PAGES_ACCESS['utente'][0]}
+                    st.rerun()
+                else:
+                    st.error("❌ Credenziali o password non valide")
 
 # ─── Informazioni aggiuntive (Autori + Credits) ───────────────────────────
 st.markdown("---")
@@ -125,22 +125,8 @@ for author in authors:
             st.write("[Immagine non disponibile]")
     with col2:
         st.markdown(f"**{author['name']}**  \n{author['desc']}")
-st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
-# ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
-if st.session_state.logged_in:
-    with st.sidebar:
-        st.markdown(f"**Ruolo:** {st.session_state.role}")
-        quart = st.session_state.quartiere or '—'
-        st.markdown(f"**Quartiere:** {quart}")
-        st.markdown("### Sezioni disponibili")
-        for page in PAGES_ACCESS[st.session_state.role]:
-            if st.button(page, key=f"nav_{page}"):
-                st.query_params = {"page": page}
-                st.rerun()
-        if st.button("Logout", key="logout_btn"):
-            st.session_state.clear()
-            st.rerun()
+# Nessun blocco sidebar qui, è già renderizzata all'inizio
 
 
 
