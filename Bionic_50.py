@@ -1,6 +1,5 @@
 import os
 import logging
-from dotenv import load_dotenv
 import streamlit as st
 from lib.style import apply_custom_style
 
@@ -12,17 +11,14 @@ PAGE_DESCRIPTION = (
     "analizzare i dati e ottenere report in tempo reale, il tutto in un'unica interfaccia intuitiva."
 )
 
-# ─── Configurazione Locale e Logging ───────────────────────────────────────
-if os.getenv("GAE_ENV", "local") == "local":
-    load_dotenv()
-
+# ─── Configurazione e Logging ──────────────────────────────────────────────
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     level=os.getenv("LOG_LEVEL", "INFO")
 )
 logger = logging.getLogger(__name__)
 
-# ─── Funzione per recuperare segreti da Secret Manager ────────────────────
+# ─── Funzione per recuperare segreti da Secret Manager (solo per credenziali) ─
 def get_secret(secret_key: str) -> str:
     if hasattr(st, 'secrets') and secret_key in st.secrets:
         return st.secrets[secret_key]
