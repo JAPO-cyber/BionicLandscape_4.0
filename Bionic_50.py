@@ -53,10 +53,10 @@ render_sidebar_navigation()
 
 # ─── Gestione navigazione multipage ────────────────────────────────────────
 params = st.experimental_get_query_params()
-if params.get("page"):
+if "page" in params:
     target = params["page"][0]
-    # Carica la pagina corrispondente in 'page/'
-    st.switch_page(f"page/{target}.py")
+    # Usa il nome del modulo pagina (senza path o estensione)
+    st.switch_page(target)
 
 # ─── Logging setup ─────────────────────────────────────────────────────────
 logging.basicConfig(
