@@ -3,7 +3,7 @@ import unicodedata
 import logging
 import streamlit as st
 from lib.style import apply_custom_style
-from lib.navigation import render_sidebar_navigation
+from lib.navigation import render_sidebar_navigation, PAGES_ACCESS
 
 # ─── Costanti Pagine (statiche) ───────────────────────────────────────────
 PAGE_TITLE = "LOTUS App"
@@ -28,9 +28,6 @@ QUARTIERI = [
 # Opzioni: "Streamlit Secrets" o "Google Secret Manager"
 SECRET_METHOD = "Streamlit Secrets"
 
-# ─── Import navigazione e mapping pagine ─────────────────────────────────
-from lib.navigation import render_sidebar_navigation, PAGES_ACCESS
-
 # ─── Funzione per recuperare segreti ───────────────────────────────────────
 def get_secret(key: str) -> str:
     try:
@@ -47,11 +44,17 @@ def get_secret(key: str) -> str:
         logging.error(f"Errore recupero segreto {key}: {e}")
         return ""
 
-# ─── Configurazione Streamlit e applicazione stile ─────────────────────────
+# ─── Configurazione Streamlit e stile ─────────────────────────────────────
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
+
 # ─── Sidebar di navigazione ─────────────────────────────────────────────────
 render_sidebar_navigation()
+
+# ─── Gestione navigazione multipage ────────────────────────────────────────
+params = st.experimental_get_query_params()
+if params.get("page"):
+    st.switch_page(params["page"][0])
 
 # ─── Logging setup ─────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -66,12 +69,12 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("role", None)
 st.session_state.setdefault("quartiere", None)
 
-# ─── Header: Titolo e Descrizione (sempre visibili) ────────────────────────
+# ─── Header: Titolo e Descrizione ──────────────────────────────────────────
 st.markdown(f"# {PAGE_TITLE}")
 st.write(PAGE_DESCRIPTION)
 st.markdown("---")
 
-# ─── Sezione di Accesso (se non autenticato) ──────────────────────────────
+# ─── Sezione di Accesso ────────────────────────────────────────────────────
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Accesso Quartieri")
     with st.form(key="login_form"):
@@ -125,8 +128,6 @@ for author in authors:
             st.write("[Immagine non disponibile]")
     with col2:
         st.markdown(f"**{author['name']}**  \n{author['desc']}")
-
-# Nessun blocco sidebar qui, è già renderizzata all'inizio
 
 
 
