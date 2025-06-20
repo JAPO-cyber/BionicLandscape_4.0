@@ -44,16 +44,15 @@ def get_secret(secret_key: str) -> str:
     try:
         if SECRET_METHOD == "Streamlit Secrets":
             return st.secrets.get(secret_key, "")
-        # Google Secret Manager
         from google.cloud import secretmanager
-        project_id = os.getenv("GCP_PROJECT") or ""
+        project_id = os.getenv("GCP_PROJECT", "")
         secret_id = os.getenv(f"GCP_SECRET_ID_{secret_key}") or secret_key
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
         response = client.access_secret_version(name=name)
         return response.payload.data.decode("UTF-8")
     except Exception as e:
-        logger.error(f"Errore nel recupero del segreto %s: %s", secret_key, e)
+        logger.error("Errore recupero segreto %s: %s", secret_key, e)
         return ""
 
 # ─── Stato Sessione ───────────────────────────────────────────────────────
@@ -70,9 +69,10 @@ PAGES_ACCESS = {
 
 CRED = {}
 for role in PAGES_ACCESS:
-    user_key = f"{role.upper()}_USER"
-    pass_key = f"{role.upper()}_PASS"
-    CRED[role] = (get_secret(user_key), get_secret(pass_key))
+    CRED[role] = (
+        get_secret(f"{role.upper()}_USER"),
+        get_secret(f"{role.upper()}_PASS")
+    )
 
 # ─── Header: Titolo e Descrizione (sempre visibili) ────────────────────────
 st.markdown(f"# {PAGE_TITLE}")
@@ -86,30 +86,28 @@ if not st.session_state.logged_in:
     selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI, key="login_quartiere")
     password = st.text_input("Password del quartiere", type="password", key="login_pass")
     if st.button("Accedi", key="login_btn"):
-        # Normalizza nome quartiere per la chiave del segreto
         raw = unicodedata.normalize('NFD', selected_quartiere)
         raw = raw.encode('ascii', 'ignore').decode('utf-8')
         key_name = raw.upper().replace(' ', '_')
-        secret_key = f"PW_{key_name}"
-        correct_pw = get_secret(secret_key)
-        if password and password == correct_pw:
+        pw_key = f"PW_{key_name}"
+        if password == get_secret(pw_key) and password != "":
             st.session_state.logged_in = True
             st.session_state.role = 'utente'
             st.session_state.quartiere = selected_quartiere
-            logger.info("Accesso al quartiere %s riuscito", selected_quartiere)
             first_page = PAGES_ACCESS['utente'][0]
             st.experimental_set_query_params(page=first_page)
             st.experimental_rerun()
         else:
-            st.error("❌ Password del quartiere non valida")
+            st.error("❌ Password non valida per il quartiere selezionato")
 
 # ─── Informazioni aggiuntive (autori + credits) ──────────────────────────
+# Always visible
 st.markdown("---")
 st.markdown("## Autori e Credits")
 authors = [
-    {"name": "Alice Rossi", "image": "assets/alice.png", "desc": "Data Scientist e UX Designer"},
-    {"name": "Bruno Bianchi", "image": "assets/bruno.png", "desc": "Esperto di Cloud e DevOps"},
-    {"name": "Chiara Verdi", "image": "assets/chiara.png", "desc": "Full Stack Developer e PM"},
+    {"name": "Alice Rossi", "image": "ASSETT/alice.png", "desc": "Data Scientist e UX Designer"},
+    {"name": "Bruno Bianchi", "image": "ASSETT/bruno.png", "desc": "Esperto di Cloud e DevOps"},
+    {"name": "Chiara Verdi", "image": "ASSETT/chiara.png", "desc": "Full Stack Developer e PM"},
 ]
 for author in authors:
     col1, col2 = st.columns([1, 3], gap="medium")
@@ -119,20 +117,21 @@ for author in authors:
         except Exception:
             st.write("[Immagine non disponibile]")
     with col2:
-        st.markdown(f"**{author['name']}**\n\n{author['desc']}")
+        st.markdown(f"**{author['name']}**  
+{author['desc']}")
 st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
 # ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
 if st.session_state.logged_in:
     with st.sidebar:
-        st.markdown(f"**Ruolo corrente:** {st.session_state.role}")
+        st.markdown(f"**Ruolo:** {st.session_state.role}")
         st.markdown(f"**Quartiere:** {st.session_state.quartiere}")
         st.markdown("### Sezioni disponibili")
-        for page in PAGES_ACCESS.get(st.session_state.role, []):
-            if st.button(f"🔗 {page}", key=f"nav_{page}"):
+        for page in PAGES_ACCESS[st.session_state.role]:
+            if st.button(page, key=f"nav_{page}"):
                 st.experimental_set_query_params(page=page)
                 st.experimental_rerun()
-        if st.button("🔓 Logout", key="logout_btn"):
+        if st.button("Logout", key="logout_btn"):
             st.session_state.logged_in = False
             st.session_state.role = None
             st.session_state.quartiere = None
