@@ -31,21 +31,9 @@ SECRET_METHOD = "Streamlit Secrets"
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
 
-# ─── Custom CSS per pulsanti e selectbox ──────────────────────────────────
-st.markdown('''
-<style>
-/* Pulsanti primari colorazione azzurro chiaro */
-.stButton>button {
-    background-color: #ADD8E6;
-    color: white;
-    border: none;
-}
-/* Selectbox background azzurro chiaro */
-.stSelectbox>div[role="button"] {
-    background-color: #ADD8E6;
-}
-</style>
-''', unsafe_allow_html=True)
+# ─── Configurazione Streamlit ────────────────────────────────────────────
+st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
+apply_custom_style()
 
 # ─── Logging setup ─────────────────────────────────────────────────────────
 logging.basicConfig(
