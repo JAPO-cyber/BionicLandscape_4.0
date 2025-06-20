@@ -171,7 +171,12 @@ if submitted:
             st.text(f"Dettaglio: {e}")
 
 # ─── Sidebar di navigazione (sempre visibile) ─────────────────────────────
-from Bionic_50 import PAGES_ACCESS  # import main pages access
+# Definisce pagine accesso (copia da main)
+PAGES_ACCESS = {
+    'utente': ['1_Registrazione'],
+    'amministrazione': ['2_Amministrazione'],
+    'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
+}
 with st.sidebar:
     st.markdown(f"**Ruolo:** {st.session_state.get('role', '—')}")
     quart = st.session_state.get('quartiere', '—')
@@ -184,7 +189,6 @@ with st.sidebar:
     if st.button("Logout", key="logout_btn"):
         st.session_state.clear()
         st.rerun()
-
 
 
 
