@@ -4,7 +4,7 @@ import logging
 import streamlit as st
 from lib.style import apply_custom_style
 
-# ─── Costanti Pagine (statiche) ───────────────────────────────────────────
+# ─── Costanti Pagina ──────────────────────────────────────────────────────
 PAGE_TITLE = "LOTUS App"
 PAGE_LAYOUT = "wide"
 PAGE_DESCRIPTION = (
@@ -12,102 +12,114 @@ PAGE_DESCRIPTION = (
     "analizzare i dati e ottenere report in tempo reale, il tutto in un'unica interfaccia intuitiva."
 )
 
-# ─── Modalità di recupero segreti (impostare manualmente in codice) ────────
-# Opzioni: "Streamlit Secrets" o "Google Secret Manager"
+# Quartieri del comune di Bergamo
+QUARTIERI = [
+    "Città Alta",
+    "Città Bassa",
+    "Valtesse",
+    "Malpensata",
+    "Longuelo",
+    "Borgo Santa Caterina",
+    "Redona",
+    "Celadina",
+]
+
+# Metodo di recupero segreti: "Streamlit Secrets" o "Google Secret Manager"
 SECRET_METHOD = "Streamlit Secrets"
 
-# ─── Mappatura pagine e credenziali ───────────────────────────────────────
+# Definizione delle pagine accessibili per ruolo
 PAGES_ACCESS = {
     'utente': ['1_Registrazione'],
     'amministrazione': ['2_Amministrazione'],
     'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
 }
 
-# ─── Funzione per recuperare segreti ───────────────────────────────────────
-def get_secret(secret_key: str) -> str:
+# Funzione per recuperare segreti
+def get_secret(key: str) -> str:
     try:
         if SECRET_METHOD == "Streamlit Secrets":
-            return st.secrets.get(secret_key, "")
+            return st.secrets.get(key, "")
         from google.cloud import secretmanager
         project_id = os.getenv("GCP_PROJECT", "")
-        secret_id = os.getenv(f"GCP_SECRET_ID_{secret_key}") or secret_key
+        secret_id = os.getenv(f"GCP_SECRET_ID_{key}") or key
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
         response = client.access_secret_version(name=name)
         return response.payload.data.decode("UTF-8")
     except Exception as e:
-        logging.error(f"Errore recupero segreto {secret_key}: {e}")
+        logging.error(f"Errore recupero segreto {key}: {e}")
         return ""
 
-# ─── Configurazione Streamlit e stile ─────────────────────────────────────
+# Configurazione Streamlit e stile
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
 
-# ─── Logging setup ─────────────────────────────────────────────────────────
+# Logging
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     level=os.getenv("LOG_LEVEL", "INFO")
 )
 logger = logging.getLogger(__name__)
-logger.info(f"Pagina iniziale caricata: {PAGE_TITLE}")
+logger.info(f"Avvio pagina: {PAGE_TITLE}")
 
-# ─── Stato sessione ────────────────────────────────────────────────────────
+# Inizializza session state
 st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("role", None)
+st.session_state.setdefault("quartiere", None)
 
-# ─── Header: Titolo e Descrizione (sempre visibili) ────────────────────────
+# Header comune
 st.markdown(f"# {PAGE_TITLE}")
 st.write(PAGE_DESCRIPTION)
 st.markdown("---")
 
-# ─── Sezione di Accesso (se non autenticato) ──────────────────────────────
+# Sezione login
 if not st.session_state.logged_in:
-    st.markdown("## 🔐 Accesso")
-    with st.form(key='login_form'):
-        username = st.text_input("Username", key="login_user")
-        password = st.text_input("Password", type="password", key="login_pass")
-        submit = st.form_submit_button("Accedi")
-        if submit:
-            # 1) Controllo ADMIN
-            admin_user = get_secret("ADMIN_USER")
-            admin_pass = get_secret("ADMIN_PASS")
-            if username == admin_user and password == admin_pass:
+    st.markdown("## 🔐 Accesso Quartieri")
+    with st.form(key="login_form"):
+        username = st.text_input("Username")
+        selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI)
+        password = st.text_input("Password Quartiere o ADMIN", type="password")
+        submitted = st.form_submit_button("Accedi")
+        if submitted:
+            # Controllo ADMIN
+            if username == get_secret("ADMIN_USER") and password == get_secret("ADMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = "ADMIN"
-                logger.info(f"{username} autenticato come ADMIN")
-                st.experimental_set_query_params(page=PAGES_ACCESS["ADMIN"][0])
+                st.session_state.quartiere = "Tutti"
+                logger.info("ADMIN autenticato")
+                st.experimental_set_query_params(page=PAGES_ACCESS['ADMIN'][0])
                 st.experimental_rerun()
-
-            # 2) Controllo utente standard
-            user_creds = get_secret("UTENTE_USER"), get_secret("UTENTE_PASS")
-            admin_creds = get_secret("AMMIN_USER"), get_secret("AMMIN_PASS")
-            if (username, password) == user_creds:
+            # Controllo amministrazione
+            if username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
                 st.session_state.logged_in = True
-                st.session_state.role = 'utente'
-                logger.info(f"{username} autenticato come utente")
-                st.experimental_set_query_params(page=PAGES_ACCESS['utente'][0])
-                st.experimental_rerun()
-            elif (username, password) == admin_creds:
-                st.session_state.logged_in = True
-                st.session_state.role = 'amministrazione'
-                logger.info(f"{username} autenticato come amministrazione")
+                st.session_state.role = "amministrazione"
+                st.session_state.quartiere = "Tutti"
+                logger.info("Amministrazione autenticato")
                 st.experimental_set_query_params(page=PAGES_ACCESS['amministrazione'][0])
                 st.experimental_rerun()
-            else:
-                st.error("❌ Credenziali non valide")
+            # Controllo utente quartiere
+            raw = unicodedata.normalize('NFD', selected_quartiere)
+            safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
+            secret_key = f"PW_{safe}"
+            if password == get_secret(secret_key) and password != "":
+                st.session_state.logged_in = True
+                st.session_state.role = "utente"
+                st.session_state.quartiere = selected_quartiere
+                logger.info(f"Utente quartiere {selected_quartiere} autenticato")
+                st.experimental_set_query_params(page=PAGES_ACCESS['utente'][0])
+                st.experimental_rerun()
+            st.error("❌ Credenziali o password quartiere non valide")
 
-# ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
+# Sidebar navigazione dopo login
 else:
     with st.sidebar:
-        st.markdown(f"**Ruolo corrente:** {st.session_state.role}")
+        st.markdown(f"**Ruolo:** {st.session_state.role}")
+        st.markdown(f"**Quartiere:** {st.session_state.quartiere}")
         st.markdown("### Sezioni disponibili")
         for page in PAGES_ACCESS[st.session_state.role]:
-            if st.button(f"🔗 {page}", key=f"nav_{page}"):
+            if st.button(page):
                 st.experimental_set_query_params(page=page)
                 st.experimental_rerun()
-        if st.button("🔓 Logout", key="logout_btn"):
-            st.session_state.logged_in = False
-            st.session_state.role = None
+        if st.button("Logout"):
+            st.session_state.clear()
             st.experimental_rerun()
-
-
