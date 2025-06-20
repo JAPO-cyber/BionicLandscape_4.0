@@ -23,7 +23,7 @@ def render_sidebar_navigation():
         for page in PAGES_ACCESS.get(role, []):
             if st.button(page, key=f"nav_{page}"):
                 # Passa al modulo corrispondente nella cartella page
-                st.switch_page(f"page/{page}.py")
+                st.switch_page(page)
 
         if st.button("Logout", key="logout_btn"):
             st.session_state.clear()
