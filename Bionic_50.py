@@ -72,7 +72,8 @@ CRED = {
     role: (
         get_secret(f"{role.upper()}_USER"),
         get_secret(f"{role.upper()}_PASS")
-    ) for role in PAGES_ACCESS
+    )
+    for role in PAGES_ACCESS
 }
 
 # ─── Header: Titolo e Descrizione (sempre visibili) ────────────────────────
@@ -83,7 +84,6 @@ st.markdown("---")
 # ─── Sezione di Accesso (se non autenticato) ──────────────────────────────
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Accesso")
-    # Login form per migliore controllo layout
     with st.form(key='login_form'):
         username = st.text_input("Username", key="login_user")
         selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI, key="login_quartiere")
@@ -102,11 +102,8 @@ if not st.session_state.logged_in:
                 st.experimental_rerun()
             else:
                 st.error("❌ Password non valida per il quartiere selezionato")
-else:
-    pass
 
-# ─── Informazioni aggiuntive (autori + credits) (autori + credits) ──────────────────────────
-# Sempre visibili
+# ─── Informazioni aggiuntive (Autori + Credits) ───────────────────────────
 st.markdown("---")
 st.markdown("## Autori e Credits")
 authors = [
@@ -114,18 +111,18 @@ authors = [
     {"name": "Bruno Bianchi", "image": "ASSETT/bruno.png", "desc": "Esperto di Cloud e DevOps"},
     {"name": "Chiara Verdi", "image": "ASSETT/chiara.png", "desc": "Full Stack Developer e PM"},
 ]
-with st.container():
-    for author in authors:
-        col1, col2 = st.columns([1, 3], gap="medium")
-        with col1:
-            if os.path.exists(author["image"]):
-                st.image(author["image"], width=100)
-            else:
-                st.write("[Immagine non disponibile]")
-        with col2:
-            st.markdown(f"**{author['name']}**  
-{author['desc']}")
-    st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
+for author in authors:
+    col1, col2 = st.columns([1, 3], gap="medium")
+    with col1:
+        if os.path.exists(author["image"]):
+            st.image(author["image"], width=100)
+        else:
+            st.write("[Immagine non disponibile]")
+    with col2:
+        # Usa f-string con newline correttamente
+        st.markdown(f"**{author['name']}**  \n{author['desc']}")
+
+st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
 # ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
 if st.session_state.logged_in:
@@ -142,4 +139,5 @@ if st.session_state.logged_in:
             st.session_state.role = None
             st.session_state.quartiere = None
             st.experimental_rerun()
+
 
