@@ -18,8 +18,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─── Funzione per recuperare segreti da Secret Manager (solo per credenziali) ─
+# ─── Funzione per recuperare segreti da Streamlit Secrets o Secret Manager ──
 def get_secret(secret_key: str) -> str:
+    # Priorità: Streamlit Cloud Secrets, altrimenti Google Secret Manager
     if hasattr(st, 'secrets') and secret_key in st.secrets:
         return st.secrets[secret_key]
     from google.cloud import secretmanager
@@ -33,13 +34,13 @@ def get_secret(secret_key: str) -> str:
 # ─── Configurazione Streamlit ────────────────────────────────────────────
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
-logger.info("Pagina iniziale: %s", PAGE_TITLE)
+logger.info("Pagina iniziale caricata: %s", PAGE_TITLE)
 
 # ─── Stato Sessione ───────────────────────────────────────────────────────
 st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("role", None)
 
-# ─── Dizionari di Accesso e Credenziali ───────────────────────────────────
+# ─── Mappatura pagine e credenziali ───────────────────────────────────────
 PAGES_ACCESS = {
     'utente': ['1_Registrazione'],
     'amministrazione': ['2_Amministrazione'],
@@ -47,16 +48,19 @@ PAGES_ACCESS = {
 }
 
 CRED = {
-    role: (get_secret(f"{role.upper()}_USER"), get_secret(f"{role.upper()}_PASS"))
+    role: (
+        get_secret(f"{role.upper()}_USER"),
+        get_secret(f"{role.upper()}_PASS")
+    )
     for role in PAGES_ACCESS
 }
 
-# ─── Descrizione Pagina (sempre visibile) ─────────────────────────────────
+# ─── Header: Titolo e Descrizione (sempre visibili) ────────────────────────
 st.markdown(f"# {PAGE_TITLE}")
 st.write(PAGE_DESCRIPTION)
 st.markdown("---")
 
-# ─── Sezione Accesso o Navigazione ────────────────────────────────────────
+# ─── Sezione di Accesso (se non autenticato) ──────────────────────────────
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Accesso")
     username = st.text_input("Username", key="login_user")
@@ -71,19 +75,24 @@ if not st.session_state.logged_in:
             st.session_state.logged_in = True
             st.session_state.role = auth_role
             logger.info("%s autenticato come %s", username, auth_role)
-            st.experimental_set_query_params(page=PAGES_ACCESS[auth_role][0])
+            # Redirect alla prima pagina disponibile
+            first_page = PAGES_ACCESS[auth_role][0]
+            st.experimental_set_query_params(page=first_page)
             st.experimental_rerun()
         else:
-            st.error("Credenziali non valide")
+            st.error("❌ Credenziali non valide")
+
+# ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
 else:
     with st.sidebar:
-        st.markdown(f"**Ruolo:** {st.session_state.role}")
+        st.markdown(f"**Ruolo corrente:** {st.session_state.role}")
         st.markdown("### Sezioni disponibili")
-        for p in PAGES_ACCESS[st.session_state.role]:
-            if st.button(p, key=f"nav_{p}"):
-                st.experimental_set_query_params(page=p)
+        for page in PAGES_ACCESS[st.session_state.role]:
+            if st.button(f"🔗 {page}", key=f"nav_{page}"):
+                st.experimental_set_query_params(page=page)
                 st.experimental_rerun()
-        if st.button("Logout", key="logout_btn"):
+        if st.button("🔓 Logout", key="logout_btn"):
             st.session_state.logged_in = False
             st.session_state.role = None
             st.experimental_rerun()
+
