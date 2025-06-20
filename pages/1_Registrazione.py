@@ -170,24 +170,21 @@ if submitted:
             st.error("❌ Errore salvataggio dati.")
             st.text(f"Dettaglio: {e}")
 
-# ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
-if st.session_state.logged_in:
-    from Bionic_50 import PAGES_ACCESS  # import main pages access
-    with st.sidebar:
-        st.markdown(f"**Ruolo:** {st.session_state.role}")
-        quart = st.session_state.get('quartiere', '—')
-        st.markdown(f"**Quartiere:** {quart}")
-        st.markdown("### Sezioni disponibili")
-        for page in PAGES_ACCESS[st.session_state.role]:
-            if st.button(page, key=f"nav_{page}"):
-                st.query_params = {"page": page}
-                st.rerun()
-        if st.button("Logout", key="logout_btn"):
-            st.session_state.clear()
+# ─── Sidebar di navigazione (sempre visibile) ─────────────────────────────
+from Bionic_50 import PAGES_ACCESS  # import main pages access
+with st.sidebar:
+    st.markdown(f"**Ruolo:** {st.session_state.get('role', '—')}")
+    quart = st.session_state.get('quartiere', '—')
+    st.markdown(f"**Quartiere:** {quart}")
+    st.markdown("### Sezioni disponibili")
+    for page in PAGES_ACCESS.get(st.session_state.get('role', ''), []):
+        if st.button(page, key=f"nav_{page}"):
+            st.query_params = {"page": page}
             st.rerun()
-        except Exception as e:
-            st.error("❌ Errore salvataggio dati.")
-            st.text(f"Dettaglio: {e}")
+    if st.button("Logout", key="logout_btn"):
+        st.session_state.clear()
+        st.rerun()
+
 
 
 
