@@ -59,31 +59,13 @@ CRED = {
 
 # ─── Sezione Login con descrizione responsive ─────────────────────────────
 if not st.session_state.logged_in:
-    # due colonne: sinistra descrizione, destra login
+    # due colonne: sinistra descrizione, destra app title
     left_col, right_col = st.columns([1, 1], gap="large")
     with left_col:
         st.markdown("## 📄 Descrizione")
         st.markdown(PAGE_DESCRIPTION)
     with right_col:
-        st.markdown("## 🔐 Login")
-        username = st.text_input("Username").strip()
-        password = st.text_input("Password", type="password").strip()
-        if st.button("Login"):
-            role = None
-            for r, creds in CRED.items():
-                if username == creds[0] and password == creds[1]:
-                    role = r
-                    break
-            if role:
-                st.session_state.logged_in = True
-                st.session_state.role = role
-                logger.info("Utente %s autenticato con ruolo %s", username, role)
-                default_page = PAGES_ACCESS[role][0]
-                st.experimental_set_query_params(page=default_page)
-                st.experimental_rerun()
-            else:
-                st.error("❌ Credenziali non valide")
-                logger.warning("Tentativo di login fallito per utente %s", username)
+        st.markdown("## LOTUS APP incredibile")
 else:
     with st.sidebar:
         st.markdown(f"👤 **Ruolo attuale:** {st.session_state.role}")
@@ -98,5 +80,6 @@ else:
             st.session_state.role = None
             logger.info("Utente disconnesso")
             st.experimental_rerun()
+
 
 
