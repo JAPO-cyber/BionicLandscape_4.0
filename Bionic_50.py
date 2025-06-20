@@ -87,14 +87,14 @@ if not st.session_state.logged_in:
                 st.session_state.role = 'ADMIN'
                 st.session_state.quartiere = None
                 st.query_params = {"page": PAGES_ACCESS['ADMIN'][0]}
-                st.experimental_rerun()
+                st.rerun()
             # 2) amministrazione
             if username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = 'amministrazione'
                 st.session_state.quartiere = None
                 st.query_params = {"page": PAGES_ACCESS['amministrazione'][0]}
-                st.experimental_rerun()
+                st.rerun()
             # 3) utente quartiere
             raw = unicodedata.normalize('NFD', selected_quartiere)
             safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
@@ -104,7 +104,7 @@ if not st.session_state.logged_in:
                 st.session_state.role = 'utente'
                 st.session_state.quartiere = selected_quartiere
                 st.query_params = {"page": PAGES_ACCESS['utente'][0]}
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("❌ Credenziali o password non valide")
 
@@ -137,9 +137,10 @@ if st.session_state.logged_in:
         for page in PAGES_ACCESS[st.session_state.role]:
             if st.button(page, key=f"nav_{page}"):
                 st.query_params = {"page": page}
-                st.experimental_rerun()
+                st.rerun()
         if st.button("Logout", key="logout_btn"):
             st.session_state.clear()
-            st.experimental_rerun()
+            st.rerun()
+
 
 
