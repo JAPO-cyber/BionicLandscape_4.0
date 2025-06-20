@@ -1,4 +1,5 @@
 import os
+import unicodedata
 import logging
 import streamlit as st
 from lib.style import apply_custom_style
@@ -10,6 +11,17 @@ PAGE_DESCRIPTION = (
     "LOTUS App è la piattaforma di digital transformation che ti aiuta a semplificare i processi, "
     "analizzare i dati e ottenere report in tempo reale, il tutto in un'unica interfaccia intuitiva."
 )
+# Quartieri del comune di Bergamo
+QUARTIERI = [
+    "Città Alta",
+    "Città Bassa",
+    "Valtesse",
+    "Malpensata",
+    "Longuelo",
+    "Borgo Santa Caterina",
+    "Redona",
+    "Celadina",
+]
 
 # ─── Modalità di recupero segreti (impostare manualmente in codice) ────────
 # Opzioni: "Streamlit Secrets" o "Google Secret Manager"
@@ -47,6 +59,7 @@ def get_secret(secret_key: str) -> str:
 # ─── Stato Sessione ───────────────────────────────────────────────────────
 st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("role", None)
+st.session_state.setdefault("quartiere", None)
 
 # ─── Mappatura pagine e credenziali ───────────────────────────────────────
 PAGES_ACCESS = {
@@ -70,27 +83,47 @@ st.markdown("---")
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Accesso")
     username = st.text_input("Username", key="login_user")
-    password = st.text_input("Password", type="password", key="login_pass")
+    selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI, key="login_quartiere")
+    password = st.text_input("Password del quartiere", type="password", key="login_pass")
     if st.button("Accedi", key="login_btn"):
-        auth_role = None
-        for role, (u, p) in CRED.items():
-            if username == u and password == p and u and p:
-                auth_role = role
-                break
-        if auth_role:
+        # Normalizza nome quartiere per la chiave del segreto
+        raw = unicodedata.normalize('NFD', selected_quartiere)
+        raw = raw.encode('ascii', 'ignore').decode('utf-8')
+        key_name = raw.upper().replace(' ', '_')
+        secret_key = f"PW_{key_name}"
+        correct_pw = get_secret(secret_key)
+        if password and password == correct_pw:
             st.session_state.logged_in = True
-            st.session_state.role = auth_role
-            logger.info("%s autenticato come %s", username, auth_role)
-            first_page = PAGES_ACCESS[auth_role][0]
+            st.session_state.role = 'utente'
+            st.session_state.quartiere = selected_quartiere
+            logger.info("Accesso al quartiere %s riuscito", selected_quartiere)
+            first_page = PAGES_ACCESS['utente'][0]
             st.experimental_set_query_params(page=first_page)
             st.experimental_rerun()
         else:
-            st.error("❌ Credenziali non valide")
+            st.error("❌ Password del quartiere non valida")
+
+    # Informazioni sugli autori
+    st.markdown("---")
+    st.markdown("## Autori")
+    authors = [
+        {"name": "Alice Rossi", "image": "assets/alice.png", "desc": "Data Scientist e UX Designer"},
+        {"name": "Bruno Bianchi", "image": "assets/bruno.png", "desc": "Esperto di Cloud e DevOps"},
+        {"name": "Chiara Verdi", "image": "assets/chiara.png", "desc": "Full Stack Developer e PM"},
+    ]
+    for author in authors:
+        col1, col2 = st.columns([1, 3], gap="medium")
+        with col1:
+            st.image(author["image"], width=100)
+        with col2:
+            st.markdown(f"**{author['name']}**\n\n{author['desc']}")
+    st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
 # ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
 else:
     with st.sidebar:
         st.markdown(f"**Ruolo corrente:** {st.session_state.role}")
+        st.markdown(f"**Quartiere:** {st.session_state.quartiere}")
         st.markdown("### Sezioni disponibili")
         for page in PAGES_ACCESS.get(st.session_state.role, []):
             if st.button(f"🔗 {page}", key=f"nav_{page}"):
@@ -99,5 +132,6 @@ else:
         if st.button("🔓 Logout", key="logout_btn"):
             st.session_state.logged_in = False
             st.session_state.role = None
+            st.session_state.quartiere = None
             st.experimental_rerun()
 
