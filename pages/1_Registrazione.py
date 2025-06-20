@@ -3,8 +3,11 @@ import pandas as pd
 import datetime
 import secrets
 import string
+import sqlalchemy
+from sqlalchemy import text
 from lib.google_sheet import get_sheet_by_name
-from lib.style import apply_custom_style
+from lib.style import apply_custom_style, get_secret
+from lib.sql_questions import fetch_questions_for_quartiere, ensure_questions_table
 
 # ─── Configura pagina ─────────────────────────────────────────────────────
 st.set_page_config(page_title="Registrazione", layout="wide")
@@ -21,15 +24,15 @@ apply_custom_style()
 quartiere = st.session_state.get("quartiere", "")
 secret_method = st.session_state.get("secret_method", "Streamlit Secrets")
 
-# ─── Genera un ID univoco da usare come "nome" del partecipante ─────────────
+# ─── Genera un ID univoco ───────────────────────────────────────────────────
 def genera_id_univoco(lunghezza=16):
     chars = string.ascii_letters + string.digits
     return ''.join(secrets.choice(chars) for _ in range(lunghezza))
 
 if "id_partecipante" not in st.session_state:
     try:
-        foglio = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
-        existing = [r[3] for r in foglio.get_all_values()[1:]]  # colonna Nome (indice 3)
+        sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
+        existing = [r[3] for r in sheet.get_all_values()[1:]]
         new_id = genera_id_univoco()
         while new_id in existing:
             new_id = genera_id_univoco()
@@ -39,105 +42,89 @@ if "id_partecipante" not in st.session_state:
         st.text(f"Dettaglio: {e}")
         st.stop()
 
-# ─── Titolo e istruzioni ────────────────────────────────────────────────────
-st.markdown('<div class="header">🏠 Benvenuto nella pagina di registrazione</div>', unsafe_allow_html=True)
-st.markdown("### 📝 Inserisci le tue informazioni per partecipare al workshop:")
-st.info(f"🔑 Il tuo codice identificativo è: `{st.session_state['id_partecipante']}`. Quartiere: {quartiere}")
+# ─── Titolo e informazioni ─────────────────────────────────────────────────
+st.markdown('<div class="header">🏠 Pagina di Registrazione</div>', unsafe_allow_html=True)
+st.markdown(f"### ID: `{st.session_state['id_partecipante']}` | Quartiere: **{quartiere}**")
+st.markdown("---")
 
-# ─── Carica tavole rotonda attive ───────────────────────────────────────────
+# ─── Caricamento opzioni tavola per modalità Streamlit Secrets ─────────────
 try:
     sheet_attive = get_sheet_by_name("Dati_Partecipante", "Tavola Rotonda Attiva")
     df_attive = pd.DataFrame(sheet_attive.get_all_records())
     opzioni = df_attive["Tavola Rotonda Attiva"].dropna().unique().tolist()
     if not opzioni:
-        st.warning("⚠️ Nessuna tavola rotonda attiva trovata.")
         opzioni = ["(nessuna disponibile)"]
-except Exception as e:
-    st.error("❌ Errore nel caricamento delle tavole rotonda.")
-    st.text(f"Dettaglio: {e}")
-    opzioni = ["(errore di connessione)"]
+except Exception:
+    opzioni = ["(errore connessione)"]
+
+# ─── Carica domande dinamiche (solo SQL) ────────────────────────────────────
+questions = []
+if secret_method != "Streamlit Secrets":
+    ensure_questions_table()
+    questions = fetch_questions_for_quartiere(quartiere)
 
 # ─── FORM DATI UTENTE ───────────────────────────────────────────────────────
 with st.form("user_info_form"):
-    tavola = st.selectbox("🔘 Tavola rotonda", opzioni)
-    eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1)
-    professione = st.text_input("💼 Professione")
-    ruolo = st.selectbox("🎭 Il tuo ruolo in questo progetto", [
-        "Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"
-    ])
-    formazione = st.text_input(
-        "🎓 Formazione o background (facoltativo)",
-        placeholder="Esempio: Architettura, Economia, Informatica..."
-    )
-    ambito = st.selectbox("🌱 Ambito di interesse", [
-        "Ambientale", "Culturale", "Sociale", "Educativo", "Urbanistico"
-    ])
-    esperienza = st.radio("🧭 Hai già partecipato ad altri progetti partecipativi?", ["Sì", "No"])
-    coinvolgimento = st.slider(
-        "📍 Quanto ti senti coinvolto/a nella vita del tuo territorio?",
-        0, 10, 5
-    )
-    conoscenza = st.slider(
-        "📚 Quanto conosci il tema di questa tavola rotonda?",
-        0, 10, 5
-    )
-    motivazione = st.text_area(
-        "🗣️ Cosa ti ha spinto a partecipare a questo tavolo di lavoro?",
-        placeholder="Scrivi liberamente..."
-    )
-    obiettivo = st.text_area(
-        "🎯 Cosa ti piacerebbe ottenere da questo incontro?",
-        placeholder="Ad esempio: conoscere persone, contribuire a un'idea..."
-    )
-    visione = st.radio("🔍 Ti senti più orientato a...", [
-        "Città verde", "Comunità coesa", "Parchi per tutti", "Tecnologia al servizio del verde"
-    ])
-    valori = st.multiselect("❤️ Quali valori senti vicini?", [
-        "Innovazione", "Collaborazione", "Responsabilità",
-        "Tradizione", "Trasparenza", "Inclusione", "Sostenibilità"
-    ])
-    canale = st.selectbox("📡 Come preferisci essere aggiornato?", [
-        "Email", "Social", "Eventi pubblici", "Sito web",
-        "Bacheche locali", "Volantino", "Scuola", "Passaparola"
-    ])
-    submitted = st.form_submit_button("Invia")
-
-# ─── Gestione submit ────────────────────────────────────────────────────────
-if submitted:
-    if not all([professione, ruolo, ambito, motivazione, obiettivo, valori]):
-        st.error("⚠️ Compila tutti i campi obbligatori prima di continuare.")
+    answers = {}
+    if secret_method == "Streamlit Secrets":
+        # campi statici
+        tavola = st.selectbox("🔘 Tavola rotonda", opzioni, key="tavola_static")
+        eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1, key="eta_static")
+        professione = st.text_input("💼 Professione", key="prof_static")
+        ruolo = st.selectbox("🎭 Ruolo", ["Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"], key="ruolo_static")
+        motivazione = st.text_area("🗣️ Motivazione", placeholder="Perché partecipi?", key="motivazione_static")
+        obiettivo = st.text_area("🎯 Obiettivo", placeholder="Cosa vuoi ottenere?", key="obiettivo_static")
+        valori = st.multiselect("❤️ Valori", ["Innovazione", "Collaborazione", "Responsabilità", "Inclusione", "Sostenibilità"], key="valori_static")
+        # popola answers
+        answers["Tavola rotonda"] = tavola
+        answers["Età"] = eta
+        answers["Professione"] = professione
+        answers["Ruolo"] = ruolo
+        answers["Motivazione"] = motivazione
+        answers["Obiettivo"] = obiettivo
+        answers["Valori"] = ", ".join(valori)
     else:
-        dati = {
-            "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Utente": st.session_state.get("username", "anonimo"),
-            "Quartiere": quartiere,
-            "Tavola rotonda": tavola,
-            "Nome": st.session_state["id_partecipante"],
-            "Età": eta,
-            "Professione": professione,
-            "Formazione": formazione,
-            "Ruolo": ruolo,
-            "Ambito": ambito,
-            "Esperienza": esperienza,
-            "Coinvolgimento": coinvolgimento,
-            "Conoscenza tema": conoscenza,
-            "Motivazione": motivazione,
-            "Obiettivo": obiettivo,
-            "Visione": visione,
-            "Valori": ", ".join(valori),
-            "Canale preferito": canale,
-            "SecretMethod": secret_method
-        }
-        try:
-            sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
-            sheet.append_row(list(dati.values()))
-            st.session_state["tavola_rotonda"] = tavola
-            st.success("✅ Dati salvati con successo!")
+                db_url = get_secret("SQL_CONNECTION_URL")
+                engine = sqlalchemy.create_engine(db_url)
+                # Crea tabella Risposte se non esiste (formato long)
+                create_sql = text(
+                    "CREATE TABLE IF NOT EXISTS Risposte ("
+                    "timestamp VARCHAR(20), "
+                    "id VARCHAR(50), "
+                    "quartiere VARCHAR(100), "
+                    "question TEXT, "
+                    "response TEXT"
+                    ")"
+                )
+                insert_sql = text(
+                    "INSERT INTO Risposte (timestamp, id, quartiere, question, response) "
+                    "VALUES (:timestamp, :id, :quartiere, :question, :response)"
+                )
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                with engine.begin() as conn:
+                    conn.execute(create_sql)
+                    for question, response in answers.items():
+                        # converte liste in stringa
+                        if isinstance(response, list):
+                            resp = ", ".join(map(str, response))
+                        else:
+                            resp = str(response)
+                        conn.execute(
+                            insert_sql,
+                            {"timestamp": ts,
+                             "id": st.session_state['id_partecipante'],
+                             "quartiere": quartiere,
+                             "question": question,
+                             "response": resp}
+                        )
+                st.success("✅ Risposte salvate su Cloud SQL!")
+            # naviga avanti
             st.query_params = {"page": "2_Persona_Model"}
             st.rerun()
         except Exception as e:
-            st.error("❌ Errore durante il salvataggio dei dati.")
+            st.error("❌ Errore salvataggio dati.")
             st.text(f"Dettaglio: {e}")
+
 
 
 
