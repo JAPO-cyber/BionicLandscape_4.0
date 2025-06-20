@@ -55,11 +55,13 @@ CRED = {
     for role in PAGES_ACCESS
 }
 
-# ─── Pagina Principale: Descrizione + Login ───────────────────────────────
+# ─── Descrizione Pagina (sempre visibile) ─────────────────────────────────
+st.markdown(f"# {PAGE_TITLE}")
+st.write(PAGE_DESCRIPTION)
+st.markdown("---")
+
+# ─── Sezione Accesso o Navigazione ────────────────────────────────────────
 if not st.session_state.logged_in:
-    st.markdown(f"# {PAGE_TITLE}")
-    st.write(PAGE_DESCRIPTION)
-    st.markdown("---")
     st.markdown("## 🔐 Accesso")
     username = st.text_input("Username", key="login_user")
     password = st.text_input("Password", type="password", key="login_pass")
