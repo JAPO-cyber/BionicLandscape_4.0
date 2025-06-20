@@ -50,7 +50,7 @@ def get_secret(key: str) -> str:
         logging.error(f"Errore recupero segreto {key}: {e}")
         return ""
 
-# ─── Configurazione Streamlit e stile ─────────────────────────────────────
+# ─── Configurazione Streamlit e applicazione stile ─────────────────────────
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
 
@@ -81,25 +81,21 @@ if not st.session_state.logged_in:
         password = st.text_input("Password Quartiere o ADMIN", type="password", key="login_pass")
         submit = st.form_submit_button("Accedi")
         if submit:
-            # Controllo ADMIN: ignora quartiere
-            admin_user = get_secret("ADMIN_USER")
-            admin_pass = get_secret("ADMIN_PASS")
-            if username == admin_user and password == admin_pass:
+            # 1) ADMIN
+            if username == get_secret("ADMIN_USER") and password == get_secret("ADMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = 'ADMIN'
                 st.session_state.quartiere = None
                 st.experimental_set_query_params(page=PAGES_ACCESS['ADMIN'][0])
                 st.experimental_rerun()
-            # Controllo Amministrazione: ignora quartiere
-            ammin_user = get_secret("AMMIN_USER")
-            ammin_pass = get_secret("AMMIN_PASS")
-            if username == ammin_user and password == ammin_pass:
+            # 2) amministrazione
+            if username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = 'amministrazione'
                 st.session_state.quartiere = None
                 st.experimental_set_query_params(page=PAGES_ACCESS['amministrazione'][0])
                 st.experimental_rerun()
-            # Controllo Utente per quartiere
+            # 3) utente quartiere
             raw = unicodedata.normalize('NFD', selected_quartiere)
             safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
             pw_key = f"PW_{safe}"
@@ -132,7 +128,7 @@ for author in authors:
 st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
 # ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
-else:
+if st.session_state.logged_in:
     with st.sidebar:
         st.markdown(f"**Ruolo:** {st.session_state.role}")
         quart = st.session_state.quartiere or '—'
@@ -145,4 +141,5 @@ else:
         if st.button("Logout", key="logout_btn"):
             st.session_state.clear()
             st.experimental_rerun()
+
 
