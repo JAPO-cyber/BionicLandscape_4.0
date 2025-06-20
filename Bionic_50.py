@@ -54,7 +54,9 @@ render_sidebar_navigation()
 # ─── Gestione navigazione multipage ────────────────────────────────────────
 params = st.experimental_get_query_params()
 if params.get("page"):
-    st.switch_page(params["page"][0])
+    target = params["page"][0]
+    # Carica la pagina corrispondente in 'page/'
+    st.switch_page(f"page/{target}.py")
 
 # ─── Logging setup ─────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -90,19 +92,19 @@ if not st.session_state.logged_in:
                 st.session_state.quartiere = None
                 st.query_params = {"page": PAGES_ACCESS['ADMIN'][0]}
                 st.rerun()
-            # 2) amministrazione
+            # 2) Amministrazione
             elif username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = 'amministrazione'
                 st.session_state.quartiere = None
                 st.query_params = {"page": PAGES_ACCESS['amministrazione'][0]}
                 st.rerun()
-            # 3) utente quartiere
+            # 3) Utente quartiere
             else:
                 raw = unicodedata.normalize('NFD', selected_quartiere)
                 safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
                 pw_key = f"PW_{safe}"
-                if password == get_secret(pw_key) and password:
+                if password and password == get_secret(pw_key):
                     st.session_state.logged_in = True
                     st.session_state.role = 'utente'
                     st.session_state.quartiere = selected_quartiere
