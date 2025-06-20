@@ -3,6 +3,11 @@ import streamlit as st
 def apply_custom_style():
     st.markdown("""
         <style>
+        /* Imposta il font globale su Helvetica Neue */
+        html, body, [class*="css"]  {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+        }
+
         /* 🌄 Sfondo generale */
         .stApp {
             background-image: url("https://raw.githubusercontent.com/JAPO-cyber/BionicLandscape_4.0/main/assets/bg.jpg");
@@ -86,5 +91,6 @@ def apply_custom_style():
         }
         </style>
     """, unsafe_allow_html=True)
+
 
 
