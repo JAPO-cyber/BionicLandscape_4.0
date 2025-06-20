@@ -44,6 +44,7 @@ def get_secret(secret_key: str) -> str:
     try:
         if SECRET_METHOD == "Streamlit Secrets":
             return st.secrets.get(secret_key, "")
+        # Google Secret Manager
         from google.cloud import secretmanager
         project_id = os.getenv("GCP_PROJECT", "")
         secret_id = os.getenv(f"GCP_SECRET_ID_{secret_key}") or secret_key
@@ -67,12 +68,12 @@ PAGES_ACCESS = {
     'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
 }
 
-CRED = {}
-for role in PAGES_ACCESS:
-    CRED[role] = (
+CRED = {
+    role: (
         get_secret(f"{role.upper()}_USER"),
         get_secret(f"{role.upper()}_PASS")
-    )
+    ) for role in PAGES_ACCESS
+}
 
 # ─── Header: Titolo e Descrizione (sempre visibili) ────────────────────────
 st.markdown(f"# {PAGE_TITLE}")
@@ -82,26 +83,30 @@ st.markdown("---")
 # ─── Sezione di Accesso (se non autenticato) ──────────────────────────────
 if not st.session_state.logged_in:
     st.markdown("## 🔐 Accesso")
-    username = st.text_input("Username", key="login_user")
-    selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI, key="login_quartiere")
-    password = st.text_input("Password del quartiere", type="password", key="login_pass")
-    if st.button("Accedi", key="login_btn"):
-        raw = unicodedata.normalize('NFD', selected_quartiere)
-        raw = raw.encode('ascii', 'ignore').decode('utf-8')
-        key_name = raw.upper().replace(' ', '_')
-        pw_key = f"PW_{key_name}"
-        if password == get_secret(pw_key) and password != "":
-            st.session_state.logged_in = True
-            st.session_state.role = 'utente'
-            st.session_state.quartiere = selected_quartiere
-            first_page = PAGES_ACCESS['utente'][0]
-            st.experimental_set_query_params(page=first_page)
-            st.experimental_rerun()
-        else:
-            st.error("❌ Password non valida per il quartiere selezionato")
+    # Login form per migliore controllo layout
+    with st.form(key='login_form'):
+        username = st.text_input("Username", key="login_user")
+        selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI, key="login_quartiere")
+        password = st.text_input("Password del quartiere", type="password", key="login_pass")
+        submit = st.form_submit_button("Accedi")
+        if submit:
+            raw = unicodedata.normalize('NFD', selected_quartiere)
+            raw = raw.encode('ascii', 'ignore').decode('utf-8')
+            key_name = raw.upper().replace(' ', '_')
+            pw_key = f"PW_{key_name}"
+            if password and password == get_secret(pw_key):
+                st.session_state.logged_in = True
+                st.session_state.role = 'utente'
+                st.session_state.quartiere = selected_quartiere
+                st.experimental_set_query_params(page=PAGES_ACCESS['utente'][0])
+                st.experimental_rerun()
+            else:
+                st.error("❌ Password non valida per il quartiere selezionato")
+else:
+    pass
 
-# ─── Informazioni aggiuntive (autori + credits) ──────────────────────────
-# Always visible
+# ─── Informazioni aggiuntive (autori + credits) (autori + credits) ──────────────────────────
+# Sempre visibili
 st.markdown("---")
 st.markdown("## Autori e Credits")
 authors = [
@@ -109,17 +114,18 @@ authors = [
     {"name": "Bruno Bianchi", "image": "ASSETT/bruno.png", "desc": "Esperto di Cloud e DevOps"},
     {"name": "Chiara Verdi", "image": "ASSETT/chiara.png", "desc": "Full Stack Developer e PM"},
 ]
-for author in authors:
-    col1, col2 = st.columns([1, 3], gap="medium")
-    with col1:
-        try:
-            st.image(author["image"], width=100)
-        except Exception:
-            st.write("[Immagine non disponibile]")
-    with col2:
-        st.markdown(f"**{author['name']}**  
+with st.container():
+    for author in authors:
+        col1, col2 = st.columns([1, 3], gap="medium")
+        with col1:
+            if os.path.exists(author["image"]):
+                st.image(author["image"], width=100)
+            else:
+                st.write("[Immagine non disponibile]")
+        with col2:
+            st.markdown(f"**{author['name']}**  
 {author['desc']}")
-st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
+    st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
 # ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
 if st.session_state.logged_in:
