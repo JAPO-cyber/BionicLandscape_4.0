@@ -20,8 +20,10 @@ if not st.session_state.get("logged_in", False):
 
 # ─── Applica stile grafico ─────────────────────────────────────────────────
 apply_custom_style()
+# ─── Sidebar di navigazione ─────────────────────────────────────────────────
+render_sidebar_navigation()
 
-# ─── Eredita quartiere e metodo segreti dal main ──────────────────────────
+# ─── Eredita quartiere e metodo segreti dal main ────────────────────────── e metodo segreti dal main ──────────────────────────
 quartiere = st.session_state.get("quartiere", "")
 secret_method = st.session_state.get("secret_method", "Streamlit Secrets")
 
