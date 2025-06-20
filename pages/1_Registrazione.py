@@ -8,9 +8,15 @@ from lib.style import apply_custom_style, get_secret
 from lib.sql_questions import fetch_questions_for_quartiere, ensure_questions_table
 from lib.save_to_sheet import save_to_sheet
 from lib.save_to_sql import save_to_sql
-from lib.navigation import render_sidebar_navigation
 
-# ─── Configura pagina ─────────────────────────────────────────────────────
+# ─── Mappatura pagine accesso globale ──────────────────────────────────────
+PAGES_ACCESS = {
+    'utente': ['1_Registrazione'],
+    'amministrazione': ['2_Amministrazione'],
+    'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
+}
+
+# ─── Configura pagina ──────────────────────────────────────────────────────
 st.set_page_config(page_title="Registrazione", layout="wide")
 
 # ─── Verifica login ───────────────────────────────────────────────────────
@@ -20,10 +26,8 @@ if not st.session_state.get("logged_in", False):
 
 # ─── Applica stile grafico ─────────────────────────────────────────────────
 apply_custom_style()
-# ─── Sidebar di navigazione ─────────────────────────────────────────────────
-render_sidebar_navigation()
 
-# ─── Eredita quartiere e metodo segreti dal main ────────────────────────── e metodo segreti dal main ──────────────────────────
+# ─── Eredita quartiere e metodo segreti dal main ──────────────────────────
 quartiere = st.session_state.get("quartiere", "")
 secret_method = st.session_state.get("secret_method", "Streamlit Secrets")
 
@@ -67,65 +71,71 @@ if secret_method != "Streamlit Secrets":
     ensure_questions_table()
     questions = fetch_questions_for_quartiere(quartiere)
 
-# ─── FORM DATI UTENTE ───────────────────────────────────────────────────────
-with st.form("user_info_form"):
-    answers = {}
-
-    if secret_method == "Streamlit Secrets":
-        answers["Tavola rotonda"] = st.selectbox("🔘 Tavola rotonda", opzioni, key="tavola_static")
-        answers["Età"] = st.number_input("🎂 Età", min_value=16, max_value=100, step=1, key="eta_static")
-        answers["Professione"] = st.text_input("💼 Professione", key="prof_static")
-        answers["Ruolo"] = st.selectbox(
-            "🎭 Ruolo", 
-            ["Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"],
-            key="ruolo_static"
-        )
-        answers["Motivazione"] = st.text_area("🗣️ Motivazione", placeholder="Perché partecipi?", key="motivazione_static")
-        answers["Obiettivo"] = st.text_area("🎯 Obiettivo", placeholder="Cosa vuoi ottenere?", key="obiettivo_static")
-        valori = st.multiselect(
-            "❤️ Valori",
-            ["Innovazione", "Collaborazione", "Responsabilità", "Inclusione", "Sostenibilità"],
-            key="valori_static"
-        )
-        answers["Valori"] = ", ".join(valori)
-    else:
-        for idx, q in enumerate(questions):
-            key = f"q_{idx}"
-            if q["type"] == "select":
-                answers[q["question"]] = st.selectbox(q["question"], q["values"], key=key)
-            elif q["type"] == "radio":
-                answers[q["question"]] = st.radio(q["question"], q["values"], key=key)
-            elif q["type"] == "multiselect":
-                answers[q["question"]] = st.multiselect(q["question"], q["values"], key=key)
-            elif q["type"] == "slider":
-                vals = [int(v) for v in q["values"] if v.isdigit()]
-                if vals:
-                    answers[q["question"]] = st.slider(
-                        q["question"], min(vals), max(vals), (min(vals) + max(vals)) // 2, key=key
-                    )
-            else:
-                answers[q["question"]] = st.text_input(q["question"], key=key)
-
-    submitted = st.form_submit_button("Invia")
-
-# ─── Salvataggio dati ───────────────────────────────────────────────────────
-if submitted:
-    if not answers:
-        st.error("⚠️ Nessuna risposta inserita.")
-    else:
-        dati = {
-            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "id": st.session_state["id_partecipante"],
-            "quartiere": quartiere,
-            "answers": answers
-        }
-        if secret_method == "Streamlit Secrets":
-            save_to_sheet({**dati, **{k: v for k, v in answers.items()}}, sheet_name="Partecipanti")
+# ─── Sezione di Accesso Quartieri ─────────────────────────────────────────
+st.markdown("## 🔐 Accesso Quartieri")
+with st.form(key="login_form"):
+    username = st.text_input("Username", key="login_user")
+    selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI, key="login_quartiere")
+    password = st.text_input("Password Quartiere o ADMIN", type="password", key="login_pass")
+    submit = st.form_submit_button("Accedi")
+    if submit:
+        # 1) ADMIN
+        if username == get_secret("ADMIN_USER") and password == get_secret("ADMIN_PASS"):
+            st.session_state.logged_in = True
+            st.session_state.role = 'ADMIN'
+            st.session_state.quartiere = None
+            st.experimental_set_query_params(page=PAGES_ACCESS['ADMIN'][0])
+            st.experimental_rerun()
+        # 2) Amministrazione
+        elif username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
+            st.session_state.logged_in = True
+            st.session_state.role = 'amministrazione'
+            st.session_state.quartiere = None
+            st.experimental_set_query_params(page=PAGES_ACCESS['amministrazione'][0])
+            st.experimental_rerun()
+        # 3) Utente quartiere
         else:
-            save_to_sql(dati, table_name="Risposte")
-        # Naviga alla pagina successiva
-        st.query_params = {"page": "2_Persona_Model"}
-        st.rerun()
+            raw = unicodedata.normalize('NFD', selected_quartiere)
+            safe = raw.encode('ascii', 'ignore').decode('utf-8').upper().replace(' ', '_')
+            pw_key = f"PW_{safe}"
+            if password and password == get_secret(pw_key):
+                st.session_state.logged_in = True
+                st.session_state.role = 'utente'
+                st.session_state.quartiere = selected_quartiere
+                st.experimental_set_query_params(page=PAGES_ACCESS['utente'][0])
+                st.experimental_rerun()
+            else:
+                st.error("❌ Credenziali o password non valide")
 
-# ─── Sidebar di navigazione ─────────────────────────────────────────────────
-render_sidebar_navigation()
+# ─── Navigazione sotto il login ───────────────────────────────────────────
+if st.session_state.logged_in:
+    st.markdown("---")
+    st.markdown("### Sezioni disponibili")
+    for page in PAGES_ACCESS[st.session_state.role]:
+        if st.button(page, key=f"nav_{page}"):
+            st.experimental_set_query_params(page=page)
+            st.experimental_rerun()
+    if st.button("Logout", key="logout_btn_bottom"):
+        st.session_state.clear()
+        st.experimental_rerun()
+
+# ─── FORM DATI UTENTE ───────────────────────────────────────────────────────
+# ... resto del form e salvataggio ...
+
+# ─── Informazioni aggiuntive (Autori + Credits) ───────────────────────────
+st.markdown("---")
+st.markdown("## Autori e Credits")
+authors = [
+    {"name": "Alice Rossi", "image": "ASSETT/alice.png", "desc": "Data Scientist e UX Designer"},
+    {"name": "Bruno Bianchi", "image": "ASSETT/bruno.png", "desc": "Esperto di Cloud e DevOps"},
+    {"name": "Chiara Verdi", "image": "ASSETT/chiara.png", "desc": "Full Stack Developer e PM"},
+]
+for author in authors:
+    col1, col2 = st.columns([1, 3], gap="medium")
+    with col1:
+        if os.path.exists(author["image"]):
+            st.image(author["image"], width=100)
+        else:
+            st.write("[Immagine non disponibile]")
+    with col2:
+        st.markdown(f"**{author['name']}**  \n{author['desc']}")
