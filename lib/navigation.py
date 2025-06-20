@@ -7,12 +7,10 @@ PAGES_ACCESS = {
     'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
 }
 
+
 def render_sidebar_navigation():
     """
-    Renderizza in sidebar:
-      - Ruolo e quartiere correnti
-      - Pulsanti verdi per navigare tra le pagine di PAGES_ACCESS[role]
-      - Logout
+    Renderizza la sidebar con navigazione diretta.
     """
     role = st.session_state.get('role', '—')
     quartiere = st.session_state.get('quartiere', '—')
@@ -24,8 +22,8 @@ def render_sidebar_navigation():
 
         for page in PAGES_ACCESS.get(role, []):
             if st.button(page, key=f"nav_{page}"):
-                st.query_params = {"page": page}
-                st.rerun()
+                # Passa al modulo corrispondente nella cartella page
+                st.switch_page(f"page/{page}.py")
 
         if st.button("Logout", key="logout_btn"):
             st.session_state.clear()
