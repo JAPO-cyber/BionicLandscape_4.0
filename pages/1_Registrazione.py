@@ -71,10 +71,18 @@ with st.form("user_info_form"):
         tavola = st.selectbox("🔘 Tavola rotonda", opzioni, key="tavola_static")
         eta = st.number_input("🎂 Età", min_value=16, max_value=100, step=1, key="eta_static")
         professione = st.text_input("💼 Professione", key="prof_static")
-        ruolo = st.selectbox("🎭 Ruolo", ["Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"], key="ruolo_static")
+        ruolo = st.selectbox(
+            "🎭 Ruolo", 
+            ["Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"],
+            key="ruolo_static"
+        )
         motivazione = st.text_area("🗣️ Motivazione", placeholder="Perché partecipi?", key="motivazione_static")
         obiettivo = st.text_area("🎯 Obiettivo", placeholder="Cosa vuoi ottenere?", key="obiettivo_static")
-        valori = st.multiselect("❤️ Valori", ["Innovazione", "Collaborazione", "Responsabilità", "Inclusione", "Sostenibilità"], key="valori_static")
+        valori = st.multiselect(
+            "❤️ Valori", 
+            ["Innovazione", "Collaborazione", "Responsabilità", "Inclusione", "Sostenibilità"],
+            key="valori_static"
+        )
         # popola answers
         answers["Tavola rotonda"] = tavola
         answers["Età"] = eta
@@ -84,15 +92,54 @@ with st.form("user_info_form"):
         answers["Obiettivo"] = obiettivo
         answers["Valori"] = ", ".join(valori)
     else:
+        # campi dinamici da SQL
+        for idx, q in enumerate(questions):
+            key = f"q_{idx}"
+            if q['type'] == 'select':
+                answers[q['question']] = st.selectbox(q['question'], q['values'], key=key)
+            elif q['type'] == 'radio':
+                answers[q['question']] = st.radio(q['question'], q['values'], key=key)
+            elif q['type'] == 'multiselect':
+                answers[q['question']] = st.multiselect(q['question'], q['values'], key=key)
+            elif q['type'] == 'slider':
+                vals = [int(v) for v in q['values'] if v.isdigit()]
+                if vals:
+                    answers[q['question']] = st.slider(
+                        q['question'], min(vals), max(vals), (min(vals)+max(vals))//2, key=key
+                    )
+            else:
+                answers[q['question']] = st.text_input(q['question'], key=key)
+    submitted = st.form_submit_button("Invia")
+
+# ─── Salvataggio dati ───────────────────────────────────────────────────────
+if submitted:
+    if not answers:
+        st.error("⚠️ Nessuna risposta inserita.")
+    else:
+        # prepara record base
+        dati = {
+            'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'id': st.session_state['id_partecipante'],
+            'quartiere': quartiere
+        }
+        # unisci risposte
+        for k, v in answers.items():
+            dati[k] = v
+        try:
+            if secret_method == "Streamlit Secrets":
+                sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
+                sheet.append_row(list(dati.values()))
+                st.success("✅ Dati salvati su Google Sheet!")
+            else:
                 db_url = get_secret("SQL_CONNECTION_URL")
                 engine = sqlalchemy.create_engine(db_url)
                 # Crea tabella Risposte se non esiste (formato long)
                 create_sql = text(
                     "CREATE TABLE IF NOT EXISTS Risposte ("
-                    "timestamp VARCHAR(20), "
-                    "id VARCHAR(50), "
-                    "quartiere VARCHAR(100), "
-                    "question TEXT, "
+                    "timestamp VARCHAR(20),"
+                    "id VARCHAR(50),"
+                    "quartiere VARCHAR(100),"
+                    "question TEXT,"
                     "response TEXT"
                     ")"
                 )
@@ -104,22 +151,39 @@ with st.form("user_info_form"):
                 with engine.begin() as conn:
                     conn.execute(create_sql)
                     for question, response in answers.items():
-                        # converte liste in stringa
-                        if isinstance(response, list):
-                            resp = ", ".join(map(str, response))
-                        else:
-                            resp = str(response)
+                        resp = ", ".join(map(str, response)) if isinstance(response, list) else str(response)
                         conn.execute(
                             insert_sql,
-                            {"timestamp": ts,
-                             "id": st.session_state['id_partecipante'],
-                             "quartiere": quartiere,
-                             "question": question,
-                             "response": resp}
+                            {
+                                "timestamp": ts,
+                                "id": st.session_state['id_partecipante'],
+                                "quartiere": quartiere,
+                                "question": question,
+                                "response": resp
+                            }
                         )
                 st.success("✅ Risposte salvate su Cloud SQL!")
             # naviga avanti
             st.query_params = {"page": "2_Persona_Model"}
+            st.rerun()
+        except Exception as e:
+            st.error("❌ Errore salvataggio dati.")
+            st.text(f"Dettaglio: {e}")
+
+# ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
+if st.session_state.logged_in:
+    from Bionic_50 import PAGES_ACCESS  # import main pages access
+    with st.sidebar:
+        st.markdown(f"**Ruolo:** {st.session_state.role}")
+        quart = st.session_state.get('quartiere', '—')
+        st.markdown(f"**Quartiere:** {quart}")
+        st.markdown("### Sezioni disponibili")
+        for page in PAGES_ACCESS[st.session_state.role]:
+            if st.button(page, key=f"nav_{page}"):
+                st.query_params = {"page": page}
+                st.rerun()
+        if st.button("Logout", key="logout_btn"):
+            st.session_state.clear()
             st.rerun()
         except Exception as e:
             st.error("❌ Errore salvataggio dati.")
