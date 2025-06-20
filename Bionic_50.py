@@ -103,24 +103,27 @@ if not st.session_state.logged_in:
         else:
             st.error("❌ Password del quartiere non valida")
 
-    # Informazioni sugli autori
-    st.markdown("---")
-    st.markdown("## Autori")
-    authors = [
-        {"name": "Alice Rossi", "image": "assets/alice.png", "desc": "Data Scientist e UX Designer"},
-        {"name": "Bruno Bianchi", "image": "assets/bruno.png", "desc": "Esperto di Cloud e DevOps"},
-        {"name": "Chiara Verdi", "image": "assets/chiara.png", "desc": "Full Stack Developer e PM"},
-    ]
-    for author in authors:
-        col1, col2 = st.columns([1, 3], gap="medium")
-        with col1:
+# ─── Informazioni aggiuntive (autori + credits) ──────────────────────────
+st.markdown("---")
+st.markdown("## Autori e Credits")
+authors = [
+    {"name": "Alice Rossi", "image": "assets/alice.png", "desc": "Data Scientist e UX Designer"},
+    {"name": "Bruno Bianchi", "image": "assets/bruno.png", "desc": "Esperto di Cloud e DevOps"},
+    {"name": "Chiara Verdi", "image": "assets/chiara.png", "desc": "Full Stack Developer e PM"},
+]
+for author in authors:
+    col1, col2 = st.columns([1, 3], gap="medium")
+    with col1:
+        try:
             st.image(author["image"], width=100)
-        with col2:
-            st.markdown(f"**{author['name']}**\n\n{author['desc']}")
-    st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
+        except Exception:
+            st.write("[Immagine non disponibile]")
+    with col2:
+        st.markdown(f"**{author['name']}**\n\n{author['desc']}")
+st.markdown("**Credits:** App sviluppata da Alice, Bruno e Chiara in collaborazione con il team Lotus.")
 
 # ─── Sidebar di navigazione (se autenticato) ───────────────────────────────
-else:
+if st.session_state.logged_in:
     with st.sidebar:
         st.markdown(f"**Ruolo corrente:** {st.session_state.role}")
         st.markdown(f"**Quartiere:** {st.session_state.quartiere}")
