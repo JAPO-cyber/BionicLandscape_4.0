@@ -68,7 +68,7 @@ st.session_state.setdefault("quartiere", None)
 # ─── Mappatura pagine e credenziali ───────────────────────────────────────
 PAGES_ACCESS = {
     'utente': ['1_Registrazione'],
-    'amministrazione': ['2_Amministrazione'],
+    'amministrazione': ['1_Registrazione'],
     'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
 }
 
