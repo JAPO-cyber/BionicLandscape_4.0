@@ -62,6 +62,10 @@ if not st.session_state.logged_in:
         st.markdown("# Benvenuto in LOTUS App")
         st.write(PAGE_DESCRIPTION)
     with cols[1]:
+        # Spiegazione sopra il form di login
+        st.markdown("### Cos'è LOTUS App?")
+        st.write("LOTUS App è la piattaforma di digital transformation che ti aiuta a semplificare i processi, analizzare dati e ottenere report in tempo reale.")
+        st.markdown("---")
         st.markdown("## 🔐 Accesso")
         username = st.text_input("Username", key="login_user")
         password = st.text_input("Password", type="password", key="login_pass")
