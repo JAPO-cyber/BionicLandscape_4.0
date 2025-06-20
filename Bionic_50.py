@@ -48,16 +48,6 @@ def get_secret(key: str) -> str:
 st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
 apply_custom_style()
 
-# ─── Sidebar di navigazione ─────────────────────────────────────────────────
-render_sidebar_navigation()
-
-# ─── Gestione navigazione multipage ────────────────────────────────────────
-params = st.experimental_get_query_params()
-if "page" in params:
-    target = params["page"][0]
-    # Usa il nome del modulo pagina (senza path o estensione)
-    st.switch_page(target)
-
 # ─── Logging setup ─────────────────────────────────────────────────────────
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
