@@ -34,40 +34,8 @@ basemap_options = {
         'attr': 'ESA CCI Land Cover'
     }
 }
-choice = st.sidebar.selectbox("Basemap ESA:", list(basemap_options.keys()), index=0)
-bm = basemap_options[choice]
-if bm['type'] == 'xyz':
-    folium.TileLayer(
-        tiles=bm['url'],
-        name=choice,
-        attr=bm['attr'],
-        opacity=1.0,
-        max_zoom=20
-    ).add_to(m)
-elif bm['type'] == 'wmts':
-    folium.raster_layers.WmsTileLayer(
-        url=bm['url'],
-        name=choice,
-        layers=bm['layers'],
-        fmt='image/png',
-        transparent=False,
-        opacity=1.0,
-        tile_size=256,
-        attr=bm['attr'],
-        version='1.0.0'
-    ).add_to(m)
-else:  # wms
-    folium.raster_layers.WmsTileLayer(
-        url=bm['url'],
-        name=choice,
-        layers=bm['layers'],
-        fmt=bm.get('fmt','image/png'),
-        transparent=False,
-        opacity=1.0,
-        version='1.3.0',
-        crs='EPSG:4326',
-        attr=bm['attr']
-    ).add_to(m)
+# Scegli basemap ESA
+esa_choice = st.sidebar.selectbox("Basemap ESA:", list(basemap_options.keys()), index=0)
 
 # Ciclabili WMS ArcGIS
 CICLABILI_WMS_URL = (
@@ -75,6 +43,7 @@ CICLABILI_WMS_URL = (
     "AtlanteBG/Ciclabili/MapServer/WMSServer?"
 )
 CICLABILI_LAYER = "1"
+
 
 # ─── Sidebar ────────────────────────────────────────────────────────────────
 st.sidebar.header("Opzioni Visualizzazione")
