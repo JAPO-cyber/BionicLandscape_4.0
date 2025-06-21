@@ -12,7 +12,7 @@ from lib.google_sheet import get_sheet_by_name
 from lib.style import apply_custom_style
 from lib.get_secret import get_secret
 from lib.sql_questions import fetch_questions_for_quartiere, ensure_questions_table
-from lib.navigation import render_sidebar_navigation
+
 
 # ─── Configura pagina ─────────────────────────────────────────────────────
 st.set_page_config(page_title="Registrazione", layout="wide")
