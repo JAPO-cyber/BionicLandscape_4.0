@@ -1,11 +1,15 @@
+import os
+import logging
+import streamlit as st
+
 # Opzioni: "Streamlit Secrets" o "Google Secret Manager"
 SECRET_METHOD = "Streamlit Secrets"
 
-# ─── Funzione per recuperare segreti ───────────────────────────────────────
 def get_secret(key: str) -> str:
     try:
         if SECRET_METHOD == "Streamlit Secrets":
             return st.secrets.get(key, "")
+        # se usi Google Secret Manager
         from google.cloud import secretmanager
         project_id = os.getenv("GCP_PROJECT", "")
         secret_id = os.getenv(f"GCP_SECRET_ID_{key}") or key
