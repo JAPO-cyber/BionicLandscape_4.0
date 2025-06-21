@@ -1,3 +1,5 @@
+# pages/4_Visualizza_Mappa.py
+
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
@@ -10,8 +12,62 @@ st.title("🗺️ Piste Ciclabili di Bergamo su ESA WorldCover")
 CENTER = [45.6983, 9.6773]  # Centro Bergamo
 ZOOM = 13
 
-# ESA Basemap (EOX Sentinel-2 Cloudless via XYZ tiles)
-ESA_TILE_URL = "https://tiles.maps.eox.at/v3/{z}/{x}/{y}.png"
+# ─── Basemap ESA: scelta multipla ───────────────────────────────────────────
+# Opzioni basemap ESA
+basemap_options = {
+    'Sentinel-2 Cloudless': {
+        'type': 'xyz',
+        'url': 'https://tiles.maps.eox.at/v3/{z}/{x}/{y}.png',
+        'attr': 'EOX Sentinel-2 Cloudless'
+    },
+    'WorldCover 2021': {
+        'type': 'wmts',
+        'url': 'https://worldcover2021.esa.int/mapproxy/wmts',
+        'layers': 'WorldCover_2021_v200',
+        'attr': 'ESA WorldCover 2021'
+    },
+    'CCI Land Cover': {
+        'type': 'wms',
+        'url': 'https://services.esa.int/corine/wmts',
+        'layers': 'CLC2018',
+        'fmt': 'image/png',
+        'attr': 'ESA CCI Land Cover'
+    }
+}
+choice = st.sidebar.selectbox("Basemap ESA:", list(basemap_options.keys()), index=0)
+bm = basemap_options[choice]
+if bm['type'] == 'xyz':
+    folium.TileLayer(
+        tiles=bm['url'],
+        name=choice,
+        attr=bm['attr'],
+        opacity=1.0,
+        max_zoom=20
+    ).add_to(m)
+elif bm['type'] == 'wmts':
+    folium.raster_layers.WmsTileLayer(
+        url=bm['url'],
+        name=choice,
+        layers=bm['layers'],
+        fmt='image/png',
+        transparent=False,
+        opacity=1.0,
+        tile_size=256,
+        attr=bm['attr'],
+        version='1.0.0'
+    ).add_to(m)
+else:  # wms
+    folium.raster_layers.WmsTileLayer(
+        url=bm['url'],
+        name=choice,
+        layers=bm['layers'],
+        fmt=bm.get('fmt','image/png'),
+        transparent=False,
+        opacity=1.0,
+        version='1.3.0',
+        crs='EPSG:4326',
+        attr=bm['attr']
+    ).add_to(m)
 
 # Ciclabili WMS ArcGIS
 CICLABILI_WMS_URL = (
@@ -59,3 +115,4 @@ m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
 # 4. Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
+
