@@ -93,6 +93,17 @@ points = [
 filtered = [p for p in points if p['category'] in selected_cats]
 coords = [[p['lat'], p['lon']] for p in filtered]
 
+# ─── Selezione mappe non ESA direttamente in pagina ─────────────────────────
+st.subheader("Mappe Regionali e Comunali — Selezione rapida")
+non_esa_keys = list(region_services.keys()) + list(bg_services.keys())
+# default tutte selezionate per mostrare
+selected_non_esa = st.multiselect(
+    "Scegli mappe non ESA da sovrapporre:",
+    options=non_esa_keys,
+    default=non_esa_keys,
+    help="Visualizza solo layer regionali e comunali senza ESA"
+)
+
 # ─── Costruzione mappa Folium ─────────────────────────────────────────────
 m = folium.Map(location=[45.6983, 9.6773], zoom_start=13, tiles=None)
 # Aggiunta basemap
@@ -151,3 +162,4 @@ st_data = st_folium(m, width=900, height=600)
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
 st.sidebar.dataframe(filtered)
+
