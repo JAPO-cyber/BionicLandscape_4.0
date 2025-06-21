@@ -1,7 +1,7 @@
 import streamlit as st
 import sqlalchemy
 from sqlalchemy import text
-from lib.style import get_secret
+from lib.get_secret import get_secret
 
 # Questo modulo si attiva solo se SECRET_METHOD è "Google Secret Manager"
 # Serve a creare la tabella delle domande e a recuperarle dinamicamente.
