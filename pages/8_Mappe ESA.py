@@ -150,18 +150,26 @@ m2 = folium.Map(location=[45.6983, 9.6773], zoom_start=13, tiles=None)
 folium.TileLayer(
     tiles=basemaps[basemap_choice], name=basemap_choice, attr=basemap_choice
 ).add_to(m2)
+# Debug info: URL e layers
+st.write("**Debug BG Services**")
 for key in bg_services:
     svc = bg_services[key]
-    folium.raster_layers.WmsTileLayer(
-        url=svc['url'],
-        name=key,
-        layers=svc['layers'],
-        fmt="image/png",
-        transparent=True,
-        opacity=opacity,
-        tile_size=256,
-        attr="Comune di Bergamo"
-    ).add_to(m2)
+    st.write(f"- {key}: url={svc['url']} layers={svc['layers']}")
+    try:
+        folium.raster_layers.WmsTileLayer(
+            url=svc['url'],
+            name=key,
+            layers=svc['layers'],
+            fmt="image/png",
+            transparent=True,
+            opacity=opacity,
+            tile_size=256,
+            version='1.3.0',
+            attr="Comune di Bergamo"
+        ).add_to(m2)
+    except Exception as e:
+        st.error(f"Errore caricamento layer {key}: {e}")
+# Controllo layer e render secondario
 folium.LayerControl().add_to(m2)
 st_folium(m2, width=900, height=600)
 
@@ -169,3 +177,4 @@ st_folium(m2, width=900, height=600)
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
 st.sidebar.dataframe(filtered)
+
