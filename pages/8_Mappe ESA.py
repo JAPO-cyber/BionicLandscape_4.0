@@ -108,16 +108,29 @@ if toggle_coords:
 # Aggiunta di tutti i layer selezionati
 for key in layers_choice:
     svc = all_services[key]
-    folium.raster_layers.WmsTileLayer(
-        url=svc['url'],
-        name=key,
-        layers=svc.get('layers'),
-        fmt="image/png",
-        transparent=True,
-        opacity=opacity,
-        tile_size=256,
-        attr="OGC"
-    ).add_to(m)
+    # Se è un WMTS (ha 'layers'), usiamo WmsTileLayer con parametro layers
+    if svc.get('layers'):
+        folium.raster_layers.WmsTileLayer(
+            url=svc['url'],
+            name=key,
+            layers=svc['layers'],
+            fmt="image/png",
+            transparent=True,
+            opacity=opacity,
+            tile_size=256,
+            attr="OGC"
+        ).add_to(m)
+    else:
+        # Per WMS server che non richiedono 'layers' o lo inferiscono tutti
+        folium.raster_layers.WmsTileLayer(
+            url=svc['url'],
+            name=key,
+            fmt="image/png",
+            transparent=True,
+            opacity=opacity,
+            tile_size=256,
+            attr="OGC"
+        ).add_to(m)
 
 # POI: heatmap o cluster
 if toggle_heatmap:
@@ -138,4 +151,3 @@ st_data = st_folium(m, width=900, height=600)
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
 st.sidebar.dataframe(filtered)
-
