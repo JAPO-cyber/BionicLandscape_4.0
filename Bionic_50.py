@@ -4,6 +4,7 @@ import logging
 import streamlit as st
 from lib.style import apply_custom_style
 from lib.navigation import render_sidebar_navigation, PAGES_ACCESS
+from lib.get_secret import get_secret
 
 # ─── Costanti Pagine (statiche) ───────────────────────────────────────────
 PAGE_TITLE = "LOTUS App"
