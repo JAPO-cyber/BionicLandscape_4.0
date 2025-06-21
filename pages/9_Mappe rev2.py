@@ -36,11 +36,11 @@ m = folium.Map(location=CENTER, zoom_start=ZOOM, tiles=None)
 # Aggiungi basemap ESA WMTS
 WmtsTileLayer(
     url=ESA_WMTS_URL,
-    name=\"ESA WorldCover\",
-    tilematrixset=\"EPSG:4326\",
-    fmt=\"image/png\",
+    name="ESA WorldCover",
+    tilematrixset="EPSG:4326",
+    fmt="image/png",
     layers=ESA_WMTS_LAYER,
-    attr=\"ESA WorldCover\",
+    attr="ESA WorldCover",
     transparent=False,
     opacity=1.0,
     tile_size=256
