@@ -102,13 +102,22 @@ m2 = folium.Map(location=[45.6983, 9.6773], zoom_start=13, tiles=None)
 folium.TileLayer(
     tiles=basemaps[basemap_choice], name=basemap_choice, attr=basemap_choice
 ).add_to(m2)
-for key in bg_services:
-    svc = bg_services[key]
-    folium.raster_layers.WmsTileLayer(
-        url=svc['url'], name=key, layers=svc['layers'],
-        fmt="image/png", transparent=True, opacity=opacity,
-        version="1.3.0", crs="EPSG:4326", attr="Comune di Bergamo"
-    ).add_to(m2)
+# Overlay WMS per Aree di Sosta e GeoJSON per Piste Ciclabili
+for key, svc in bg_services.items():
+    if key == 'Piste Ciclabili':
+        # carica GeoJSON dal FeatureServer per linee ciclabili
+        feature_url = svc['url'].replace('WMSServer?', 'MapServer') + "/1/query?where=1=1&outFields=*&f=geojson"
+        folium.GeoJson(
+            feature_url,
+            name=key,
+            tooltip=folium.GeoJsonTooltip(fields=['FID'] if 'FID' in svc else None)
+        ).add_to(m2)
+    else:
+        folium.raster_layers.WmsTileLayer(
+            url=svc['url'], name=key, layers=svc['layers'],
+            fmt="image/png", transparent=True, opacity=opacity,
+            version="1.3.0", crs="EPSG:4326", attr="Comune di Bergamo"
+        ).add_to(m2)
 folium.LayerControl().add_to(m2)
 st_folium(m2, width=900, height=600)
 
