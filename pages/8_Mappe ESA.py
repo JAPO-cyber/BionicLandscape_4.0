@@ -56,16 +56,6 @@ bg_services = {
         'url': 'https://territorio.comune.bergamo.it:443/arcgis/services/AtlanteBG/Ciclabili/MapServer/WMSServer?',
         'layers': '1'
     }
-},
-    'Piste Ciclabili': {
-        'url': 'https://territorio.comune.bergamo.it:443/arcgis/services/AtlanteBG/Ciclabili/MapServer/WMSServer?'
-        , 'layers': '1'
-    }
-},
-    'Piste Ciclabili': {
-        'url': 'https://www.comune.bergamo.it/arcgis/services/AtlanteBG/Ciclabili/MapServer/WMSServer?',
-        'layers': '0'
-    }
 }
 # Unione di tutti i servizi
 all_services = {**esa_services, **region_services, **bg_services}
@@ -187,4 +177,3 @@ st_folium(m2, width=900, height=600)
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
 st.sidebar.dataframe(filtered)
-
