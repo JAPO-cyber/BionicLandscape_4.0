@@ -36,8 +36,17 @@ esa_services = {
 region_services = {
     'Carta Fisica RL': {
         'url': 'https://www.cartografia.servizirl.it/arcgis2/services/wms/fisica_wms/MapServer/WMSServer?',
-        'layers': None
+        'layers': '0'
     },
+    'Zone Vulnerabili Nitrati': {
+        'url': 'https://www.cartografia.servizirl.it/arcgis2/services/ambiente/Zone_vulnerabili_nitrati/MapServer/WMSServer?',
+        'layers': '0'
+    },
+    'Grandi Strutture Vendita': {
+        'url': 'https://www.cartografia.servizirl.it/arcgis2/services/commercio/GrandiStruttureVendita/MapServer/WMSServer?',
+        'layers': '0'
+    }
+},
     'Zone Vulnerabili Nitrati': {
         'url': 'https://www.cartografia.servizirl.it/arcgis2/services/ambiente/Zone_vulnerabili_nitrati/MapServer/WMSServer?',
         'layers': None
@@ -196,4 +205,3 @@ st_folium(m2, width=900, height=600)
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
 st.sidebar.dataframe(filtered)
-
