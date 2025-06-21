@@ -116,3 +116,4 @@ m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
 
+
