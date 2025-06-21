@@ -29,6 +29,7 @@ CICLABILI_LAYER = "1"
 
 # ─── Sidebar ────────────────────────────────────────────────────────────────
 st.sidebar.header("Opzioni Visualizzazione")
+show_ciclabili = st.sidebar.checkbox("Mostra Piste Ciclabili", value=True)
 opacity = st.sidebar.slider("Opacità Piste Ciclabili", min_value=0.1, max_value=1.0, value=0.8)
 
 # ─── Creazione mappa Folium ───────────────────────────────────────────────
