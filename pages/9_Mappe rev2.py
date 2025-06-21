@@ -9,44 +9,41 @@ st.set_page_config(page_title="Piste Ciclabili su ESA", layout="wide")
 st.title("🗺️ Piste Ciclabili di Bergamo su ESA WorldCover")
 
 # ─── Costanti ──────────────────────────────────────────────────────────────
-# Centro e zoom
-CENTER = [45.6983, 9.6773]
+CENTER = [45.6983, 9.6773]  # Centro Bergamo
 ZOOM = 13
 
-# ESA WorldCover basemap (WMTS)
-ESA_WMTS_URL = "https://worldcover2021.esa.int/mapproxy/wmts"
-ESA_WMTS_LAYER = "WorldCover_2021_v200"
+# ESA Basemap (EOX Sentinel-2 Cloudless proxy WMTS)
+ESA_TILE_URL = (
+    "https://tiles.maps.eox.at/wmts?"
+    "SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=s2cloudless-2019&STYLE=&"
+    "TILEMATRIXSET=GoogleMapsCompatible&FORMAT=image%2Fjpeg&"
+    "TileMatrix={z}&TileRow={y}&TileCol={x}"
+)
 
-# WMS Piste Ciclabili Comune di Bergamo
+# Ciclabili WMS ArcGIS
 CICLABILI_WMS_URL = (
     "https://territorio.comune.bergamo.it/arcgis/services/"
     "AtlanteBG/Ciclabili/MapServer/WMSServer?"
 )
 CICLABILI_LAYER = "1"
 
-# ─── Widget Sidebar ────────────────────────────────────────────────────────
+# ─── Sidebar ────────────────────────────────────────────────────────────────
 st.sidebar.header("Opzioni Visualizzazione")
-opacity = st.sidebar.slider("Opacità piste ciclabili", 0.1, 1.0, 0.8)
+opacity = st.sidebar.slider("Opacità Piste Ciclabili", min_value=0.1, max_value=1.0, value=0.8)
 
 # ─── Creazione mappa Folium ───────────────────────────────────────────────
-# Mappa senza tiles
 m = folium.Map(location=CENTER, zoom_start=ZOOM, tiles=None)
 
-# Aggiungi basemap ESA basata su XYZ (EOX Sentinel-2 Cloudless come proxy ESA)
+# 1. Aggiungi basemap ESA
 folium.TileLayer(
-    tiles=(
-        "https://tiles.maps.eox.at/wmts?"  
-        "SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=s2cloudless-2019&STYLE=&"
-        "TILEMATRIXSET=GoogleMapsCompatible&FORMAT=image%2Fjpeg&"
-        "TileMatrix={z}&TileRow={y}&TileCol={x}"
-    ),
-    name="ESA Sentinel-2 Cloudless",
+    tiles=ESA_TILE_URL,
+    name="ESA Satellite (Sentinel-2 Cloudless)",
     attr="EOX Sentinel-2 Cloudless",
     opacity=1.0,
     max_zoom=20
 ).add_to(m)
 
-# Aggiungi overlay piste ciclabili (WMS versione 1.1.1 con CRS 4326)
+# 2. Overlay WMS Piste Ciclabili
 folium.raster_layers.WmsTileLayer(
     url=CICLABILI_WMS_URL,
     name="Piste Ciclabili",
@@ -59,10 +56,10 @@ folium.raster_layers.WmsTileLayer(
     attr="Comune di Bergamo"
 ).add_to(m)
 
-# Restringi la vista al bounding box comunale per evitare query fuori area
-# Coordinate: SW = (45.655085, 9.618587), NE = (45.731830, 9.714212)
+# 3. Fit to Bergamo bounding box
 m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
 
-# Controllo layer e render
+# 4. Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
+
