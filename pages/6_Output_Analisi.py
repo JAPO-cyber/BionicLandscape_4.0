@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 
 from lib.style import apply_custom_style
 from lib.google_sheet import get_sheet_by_name
+from lib.navigation import render_sidebar_navigation
 
 # -------------------- Utility & Config --------------------
 @st.cache_data
@@ -35,6 +36,12 @@ def fix_decimal_commas(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
 # -------------------- App Initialization --------------------
 st.set_page_config(page_title="6. Analisi e risultati", layout="wide")
 apply_custom_style()
+
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.error("❌ Accesso negato. Torna alla pagina principale.")
+    st.stop()
+
+render_sidebar_navigation()
 st.title("6. Analisi e visualizzazione dei risultati")
 
 # -------------------- Load & Clean --------------------
