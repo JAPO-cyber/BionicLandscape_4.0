@@ -3,7 +3,7 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
-
+from folium.plugins import WmtsTileLayer
 
 # ─── Configurazione pagina ──────────────────────────────────────────────────
 st.set_page_config(page_title="Piste Ciclabili su ESA", layout="wide")
@@ -47,20 +47,23 @@ folium.TileLayer(
     max_zoom=20
 ).add_to(m)
 
-# Aggiungi overlay piste ciclabili
+# Aggiungi overlay piste ciclabili (WMS versione 1.1.1 con CRS 4326)
 folium.raster_layers.WmsTileLayer(
     url=CICLABILI_WMS_URL,
     name="Piste Ciclabili",
     layers=CICLABILI_LAYER,
     fmt="image/png",
     transparent=True,
-    version="1.3.0",
+    version="1.1.1",
     crs="EPSG:4326",
     opacity=opacity,
     attr="Comune di Bergamo"
 ).add_to(m)
 
+# Restringi la vista al bounding box comunale per evitare query fuori area
+# Coordinate: SW = (45.655085, 9.618587), NE = (45.731830, 9.714212)
+m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
+
 # Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
-
