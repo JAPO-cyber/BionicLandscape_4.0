@@ -155,21 +155,21 @@ st.write("**Debug BG Services**")
 for key in bg_services:
     svc = bg_services[key]
     st.write(f"- {key}: url={svc['url']} layers={svc['layers']}")
+    # Proviamo via GeoJSON FeatureServer
     try:
-        folium.raster_layers.WmsTileLayer(
-            url=svc['url'],
+        base = svc['url'].replace('WMSServer?', 'MapServer')
+        feature_url = f"{base}/{svc['layers']}/query?where=1%3D1&outFields=*&f=geojson"
+        st.write(f"Provo a caricare GeoJSON da: {feature_url}")
+        folium.GeoJson(
+            feature_url,
             name=key,
-            layers=svc['layers'],
-            fmt="image/png",
-            transparent=True,
-            opacity=opacity,
-            tile_size=256,
-            version='1.3.0',
-            attr="Comune di Bergamo"
+            tooltip=key
         ).add_to(m2)
     except Exception as e:
-        st.error(f"Errore caricamento layer {key}: {e}")
+        st.error(f"Errore GeoJSON layer {key}: {e}")
 # Controllo layer e render secondario
+folium.LayerControl().add_to(m2)
+st_folium(m2, width=900, height=600)
 folium.LayerControl().add_to(m2)
 st_folium(m2, width=900, height=600)
 
