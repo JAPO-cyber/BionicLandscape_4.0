@@ -14,6 +14,7 @@ basemaps = {
     'OpenStreetMap': 'OpenStreetMap',
     'Stamen Terrain': 'Stamen Terrain',
     'Stamen Toner': 'Stamen Toner',
+    # ESRI satellite basemap from Leaflet providers (Esri.WorldImagery)
     'Esri Satellite': 'Esri.WorldImagery',
     'CartoDB Positron': 'CartoDB.Positron'
 }
@@ -95,42 +96,38 @@ else:
 folium.LayerControl().add_to(m)
 st_data = st_folium(m, width=900, height=600)
 
-# ─── Mappa secondaria: solo Piste Ciclabili con spessore e legenda ─────────────────────────────────
-st.subheader("🗺️ Mappa Comunale: Piste Ciclabili")
-
-# Slider per spessore linee ciclabili
-line_weight = st.sidebar.slider("Spessore linee ciclabili", min_value=1, max_value=10, value=3)
+# ─── Mappa secondaria: solo Piste Ciclabili su basemap ESA ─────────────────
+st.subheader("🗺️ Mappa Comunale: Piste Ciclabili su ESA WorldCover")
 
 # Costruzione mappa secondaria
 m2 = folium.Map(location=[45.6983, 9.6773], zoom_start=13, tiles=None)
-# Basemap
-folium.TileLayer(
-    tiles=basemaps[basemap_choice], name=basemap_choice, attr=basemap_choice
+
+# Aggiunta basemap ESA WorldCover 2021
+esa_base = esa_services['ESA WorldCover 2021']
+folium.raster_layers.WmsTileLayer(
+    url=esa_base['url'],
+    name='Base ESA WorldCover',
+    layers=esa_base['layers'],
+    fmt='image/png',
+    transparent=False,
+    opacity=1.0,
+    tile_size=256,
+    attr='ESA WorldCover'
 ).add_to(m2)
 
-# Caricamento GeoJSON dal FeatureServer di ArcGIS per le piste ciclabili
+# Overlay WMS per Piste Ciclabili
 svc = bg_services['Piste Ciclabili']
-feature_url = svc['url'].replace('WMSServer', 'MapServer') + "/1/query?where=1%3D1&outFields=*&f=geojson"
-
-# Aggiunta GeoJson con stile dinamico basato su slider
-gj = folium.GeoJson(
-    feature_url,
+folium.raster_layers.WmsTileLayer(
+    url=svc['url'],
     name='Piste Ciclabili',
-    style_function=lambda feat: {
-        'color': '#FF6600',
-        'weight': line_weight
-    }
-)
-gj.add_to(m2)
-
-# Legenda personalizzata
-legend_html = '''
-<div style="position: fixed; bottom: 50px; left: 50px; z-index:9999; background:white; padding:10px; border:2px solid grey;">
-<b>Legenda Piste Ciclabili</b><br>
-<span style="display:inline-block;width:30px;height:3px;background:#FF6600;"></span> Segnala tratti ciclabili
-</div>
-'''
-m2.get_root().html.add_child(folium.Element(legend_html))
+    layers=svc['layers'],
+    fmt='image/png',
+    transparent=True,
+    opacity=opacity,
+    version='1.3.0',
+    crs='EPSG:4326',
+    attr='Comune di Bergamo'
+).add_to(m2)
 
 # Controllo layer secondario e render
 folium.LayerControl().add_to(m2)
