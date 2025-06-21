@@ -158,6 +158,40 @@ else:
 folium.LayerControl().add_to(m)
 st_data = st_folium(m, width=900, height=600)
 
+# ─── Mappa secondaria: solo layer Comune di Bergamo ─────────────────────────
+st.subheader("🗺️ Mappa Comune di Bergamo (solo layer comunali)")
+# Costruisco una mappa separata
+m2 = folium.Map(location=[45.6983, 9.6773], zoom_start=13, tiles=None)
+# Basemap (stesso della principale)
+folium.TileLayer(tiles=basemaps[basemap_choice], name=basemap_choice, attr=basemap_choice).add_to(m2)
+# Aggiungo i soli layer comunali (bg_services)
+for key in bg_services:
+    svc = bg_services[key]
+    if svc.get('layers'):
+        folium.raster_layers.WmsTileLayer(
+            url=svc['url'],
+            name=key,
+            layers=svc['layers'],
+            fmt="image/png",
+            transparent=True,
+            opacity=opacity,
+            tile_size=256,
+            attr="Comune di Bergamo"
+        ).add_to(m2)
+    else:
+        folium.raster_layers.WmsTileLayer(
+            url=svc['url'],
+            name=key,
+            fmt="image/png",
+            transparent=True,
+            opacity=opacity,
+            tile_size=256,
+            attr="Comune di Bergamo"
+        ).add_to(m2)
+# Aggiungo controllo layer e render secondario
+folium.LayerControl().add_to(m2)
+st_folium(m2, width=900, height=600)
+
 # Debug sidebar
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
