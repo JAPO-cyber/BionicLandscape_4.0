@@ -69,9 +69,8 @@ layers_choice = st.sidebar.multiselect(
     "Seleziona uno o più layer da sovrapporre:",
     options=list(all_services.keys()),
     default=list(all_services.keys())  # carica tutte le mappe di default
-)),
-    default=[]
 )
+
 # Opacità comune per tutti i layer
 opacity = st.sidebar.slider("Opacità layer WMS/WMTS", 0.0, 1.0, 0.6)
 # Plugin interattivi
@@ -139,3 +138,4 @@ st_data = st_folium(m, width=900, height=600)
 st.sidebar.markdown("---")
 st.sidebar.write(f"POI mostrati: {len(filtered)}")
 st.sidebar.dataframe(filtered)
+
