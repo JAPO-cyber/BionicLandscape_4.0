@@ -4,6 +4,7 @@ import pydeck as pdk
 from datetime import datetime
 from lib.style import apply_custom_style
 from lib.google_sheet import get_sheet_by_name
+from lib.navigation import render_sidebar_navigation
 
 # ✅ Configura pagina e stile
 st.set_page_config(page_title="5. Valutazione dei parchi", layout="wide")
@@ -17,6 +18,8 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
 if "id_partecipante" not in st.session_state:
     st.error("❌ Identificativo partecipante mancante. Torna alla registrazione.")
     st.stop()
+
+render_sidebar_navigation()
 
 # ✅ Titolo e descrizione
 st.title("5. Valutazione dei parchi di Bergamo")

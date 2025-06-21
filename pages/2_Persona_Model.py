@@ -12,12 +12,19 @@ from scipy import stats
 import re
 from lib.google_sheet import get_sheet_by_name
 from lib.style import apply_custom_style
+from lib.navigation import render_sidebar_navigation
 
 # ✅ Configura la pagina (deve essere il primo comando Streamlit)
 st.set_page_config(page_title="📊 Personas Model Analysis", layout="wide")
 
 # ✅ Applica stile grafico centralizzato
 apply_custom_style()
+
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.error("❌ Accesso negato. Torna alla pagina principale.")
+    st.stop()
+
+render_sidebar_navigation()
 
 st.title("📊 Analisi partecipanti - Personas Model")
 

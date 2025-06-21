@@ -42,6 +42,9 @@ st.session_state.setdefault("logged_in", False)
 st.session_state.setdefault("role", None)
 st.session_state.setdefault("quartiere", None)
 
+# ─── Navigazione laterale ──────────────────────────────────────────────────
+render_sidebar_navigation()
+
 # ─── Header: Titolo e Descrizione ──────────────────────────────────────────
 st.markdown(f"# {PAGE_TITLE}")
 st.write(PAGE_DESCRIPTION)
@@ -61,15 +64,15 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.session_state.role = 'ADMIN'
                 st.session_state.quartiere = None
-                st.query_params = {"page": PAGES_ACCESS['ADMIN'][0]}
-                st.rerun()
+                st.experimental_set_query_params(page=PAGES_ACCESS['ADMIN'][0])
+                st.experimental_rerun()
             # 2) Amministrazione
             elif username == get_secret("AMMIN_USER") and password == get_secret("AMMIN_PASS"):
                 st.session_state.logged_in = True
                 st.session_state.role = 'amministrazione'
                 st.session_state.quartiere = None
-                st.query_params = {"page": PAGES_ACCESS['amministrazione'][0]}
-                st.rerun()
+                st.experimental_set_query_params(page=PAGES_ACCESS['amministrazione'][0])
+                st.experimental_rerun()
             # 3) Utente quartiere
             else:
                 raw = unicodedata.normalize('NFD', selected_quartiere)
@@ -79,8 +82,8 @@ if not st.session_state.logged_in:
                     st.session_state.logged_in = True
                     st.session_state.role = 'utente'
                     st.session_state.quartiere = selected_quartiere
-                    st.query_params = {"page": PAGES_ACCESS['utente'][0]}
-                    st.rerun()
+                    st.experimental_set_query_params(page=PAGES_ACCESS['utente'][0])
+                    st.experimental_rerun()
                 else:
                     st.error("❌ Credenziali o password non valide")
 

@@ -12,6 +12,7 @@ from lib.google_sheet import get_sheet_by_name
 from lib.style import apply_custom_style
 from lib.get_secret import get_secret
 from lib.sql_questions import fetch_questions_for_quartiere, ensure_questions_table
+from lib.navigation import render_sidebar_navigation
 
 
 # ─── Configura pagina ─────────────────────────────────────────────────────
@@ -22,8 +23,11 @@ if not st.session_state.get("logged_in", False):
     st.error("❌ Accesso negato. Torna alla pagina principale.")
     st.stop()
 
+
 # ─── Applica stile grafico ─────────────────────────────────────────────────
 apply_custom_style()
+
+render_sidebar_navigation()
 
 # ─── Eredita quartiere e metodo segreti dal main ──────────────────────────
 quartiere = st.session_state.get("quartiere", "")
@@ -151,8 +155,8 @@ if submitted:
                         })
                 st.success("✅ Risposte salvate su Cloud SQL!")
             # vai avanti
-            st.query_params = {"page": "2_Persona_Model"}
-            st.rerun()
+            st.experimental_set_query_params(page="2_Persona_Model")
+            st.experimental_rerun()
 
         except Exception as e:
             st.error("❌ Errore salvataggio dati.")

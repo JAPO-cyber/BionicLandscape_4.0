@@ -5,6 +5,7 @@ import io
 from datetime import datetime
 from lib.style import apply_custom_style
 from lib.google_sheet import get_sheet_by_name
+from lib.navigation import render_sidebar_navigation
 
 # ✅ Configura e applica lo stile
 st.set_page_config(page_title="🌿 Percezione Verde Urbano", layout="wide")
@@ -14,6 +15,8 @@ apply_custom_style()
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.error("❌ Accesso negato. Torna alla pagina principale.")
     st.stop()
+
+render_sidebar_navigation()
 
 # ✅ Verifica esistenza della chiave univoca
 if "id_partecipante" not in st.session_state:

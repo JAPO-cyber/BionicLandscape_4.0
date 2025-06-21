@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from kmodes.kprototypes import KPrototypes
 from lib.google_sheet import get_sheet_by_name
+from lib.style import apply_custom_style
+from lib.navigation import render_sidebar_navigation
 import re
 import json
 
@@ -12,6 +14,13 @@ from google import genai
 
 # 🛠️ Impostazioni iniziali
 st.set_page_config(page_title="Cluster e Analisi Partecipanti", layout="wide")
+apply_custom_style()
+
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.error("❌ Accesso negato. Torna alla pagina principale.")
+    st.stop()
+
+render_sidebar_navigation()
 
 # 🔄 Tabs per separare analisi
 tab1, tab2 = st.tabs(["📊 Cluster Insight", "📌 Pareto & Ishikawa"])
