@@ -33,17 +33,18 @@ opacity = st.sidebar.slider("Opacità piste ciclabili", 0.1, 1.0, 0.8)
 # Mappa senza tiles
 m = folium.Map(location=CENTER, zoom_start=ZOOM, tiles=None)
 
-# Aggiungi basemap ESA WMTS
-WmtsTileLayer(
-    url=ESA_WMTS_URL,
-    name="ESA WorldCover",
-    tilematrixset="EPSG:4326",
-    fmt="image/png",
-    layers=ESA_WMTS_LAYER,
-    attr="ESA WorldCover",
-    transparent=False,
+# Aggiungi basemap ESA basata su XYZ (EOX Sentinel-2 Cloudless come proxy ESA)
+folium.TileLayer(
+    tiles=(
+        "https://tiles.maps.eox.at/wmts?"  
+        "SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=s2cloudless-2019&STYLE=&"
+        "TILEMATRIXSET=GoogleMapsCompatible&FORMAT=image%2Fjpeg&"
+        "TileMatrix={z}&TileRow={y}&TileCol={x}"
+    ),
+    name="ESA Sentinel-2 Cloudless",
+    attr="EOX Sentinel-2 Cloudless",
     opacity=1.0,
-    tile_size=256
+    max_zoom=20
 ).add_to(m)
 
 # Aggiungi overlay piste ciclabili
