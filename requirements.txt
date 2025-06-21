@@ -15,3 +15,4 @@ statsmodels
 google-genai
 kmodes
 sqlalchemy
+streamlit_folium
