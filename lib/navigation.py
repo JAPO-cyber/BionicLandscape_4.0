@@ -8,7 +8,7 @@ PAGES_ACCESS = {
 }
 
 
-def render_sidebar_navigation():
+def render_sidebar_navigation_0():
     """
     Renderizza la sidebar con navigazione diretta.
     """
@@ -28,3 +28,12 @@ def render_sidebar_navigation():
         if st.button("Logout", key="logout_btn"):
             st.session_state.clear()
             st.rerun()
+            
+def render_sidebar_navigation():
+    role = st.session_state.get('role', '—')
+    quartiere = st.session_state.get('quartiere', '—')
+
+    with st.sidebar:
+        st.markdown(f"**Ruolo:** {role}")
+        st.markdown(f"**Quartiere:** {quartiere}")
+    
