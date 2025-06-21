@@ -174,5 +174,3 @@ if submitted:
             st.error("❌ Errore salvataggio dati.")
             st.text(f"Dettaglio: {e}")
 
-# ─── Sidebar di navigazione ─────────────────────────────────────────────────
-render_sidebar_navigation()
