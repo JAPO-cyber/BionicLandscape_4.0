@@ -48,10 +48,16 @@ region_services = {
     }
 }
 bg_services = {
+    # Layer comunali WMS dal dominio territoriale corretto
     'Aree di Sosta': {
-        'url': 'https://www.comune.bergamo.it/arcgis/services/AtlanteBG/AreeSosta/MapServer/WMSServer?',
-        'layers': '0'
+        'url': 'https://territorio.comune.bergamo.it:443/arcgis/services/AtlanteBG/AreeSosta/MapServer/WMSServer?'
+        , 'layers': '0'
     },
+    'Piste Ciclabili': {
+        'url': 'https://territorio.comune.bergamo.it:443/arcgis/services/AtlanteBG/Ciclabili/MapServer/WMSServer?'
+        , 'layers': '1'
+    }
+},
     'Piste Ciclabili': {
         'url': 'https://www.comune.bergamo.it/arcgis/services/AtlanteBG/Ciclabili/MapServer/WMSServer?',
         'layers': '0'
