@@ -1,127 +1,177 @@
-import os
-import unicodedata
-import logging
+# pages/1_Registrazione.py
+
 import streamlit as st
-from lib.style import apply_custom_style
+import pandas as pd
+import datetime
+import secrets
+import string
+import sqlalchemy
+from sqlalchemy import text
 
-# ─── Mappatura pagine accesso globale ──────────────────────────────────────
-PAGES_ACCESS = {
-    'utente': ['1_Registrazione'],
-    'amministrazione': ['2_Amministrazione'],
-    'ADMIN': ['1_Registrazione', '2_Amministrazione', '3_Admin'],
-}
+from lib.google_sheet import get_sheet_by_name
+from lib.style import apply_custom_style, get_secret
+from lib.sql_questions import fetch_questions_for_quartiere, ensure_questions_table
+from lib.navigation import render_sidebar_navigation
 
-# ─── Costanti Pagine (statiche) ───────────────────────────────────────────
-PAGE_TITLE = "LOTUS App"
-PAGE_LAYOUT = "wide"
-PAGE_DESCRIPTION = (
-    "LOTUS App è la piattaforma di digital transformation che ti aiuta a semplificare i processi, "
-    "analizzare i dati e ottenere report in tempo reale, il tutto in un'unica interfaccia intuitiva."
-)
+# ─── Configura pagina ─────────────────────────────────────────────────────
+st.set_page_config(page_title="Registrazione", layout="wide")
 
-QUARTIERI = [
-    "Città Alta", "Città Bassa", "Valtesse", "Malpensata",
-    "Longuelo", "Borgo Santa Caterina", "Redona", "Celadina"
-]
+# ─── Verifica login ───────────────────────────────────────────────────────
+if not st.session_state.get("logged_in", False):
+    st.error("❌ Accesso negato. Torna alla pagina principale.")
+    st.stop()
 
-SECRET_METHOD = "Streamlit Secrets"
-
-# ─── Recupero segreti ───────────────────────────────────────
-def get_secret(key: str) -> str:
-    try:
-        if SECRET_METHOD == "Streamlit Secrets":
-            return st.secrets.get(key, "")
-        from google.cloud import secretmanager
-        project_id = os.getenv("GCP_PROJECT", "")
-        secret_id = os.getenv(f"GCP_SECRET_ID_{key}", key)
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
-        response = client.access_secret_version(name=name)
-        return response.payload.data.decode("UTF-8")
-    except Exception as e:
-        logging.error(f"Errore recupero segreto '{key}': {e}")
-        return ""
-
-# ─── Configurazione Streamlit e stile ─────────────────────────────────────
-st.set_page_config(page_title=PAGE_TITLE, layout=PAGE_LAYOUT)
+# ─── Applica stile grafico ─────────────────────────────────────────────────
 apply_custom_style()
 
-# ─── Logging setup ─────────────────────────────────────────────────────────
-logging.basicConfig(
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    level=os.getenv("LOG_LEVEL", "INFO")
-)
-logger = logging.getLogger(__name__)
-logger.info(f"Avvio pagina: {PAGE_TITLE}")
+# ─── Eredita quartiere e metodo segreti dal main ──────────────────────────
+quartiere = st.session_state.get("quartiere", "")
+secret_method = st.session_state.get("secret_method", "Streamlit Secrets")
 
-# ─── Inizializzazione session state ────────────────────────────────────────
-for key in ["logged_in", "role", "quartiere"]:
-    st.session_state.setdefault(key, None)
+# ─── Genera un ID univoco ───────────────────────────────────────────────────
+def genera_id_univoco(lunghezza=16):
+    chars = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(lunghezza))
 
-# ─── Navigazione multipage ────────────────────────────────────────
-params = st.experimental_get_query_params()
-if "page" in params:
-    st.switch_page(params["page"][0])
+if "id_partecipante" not in st.session_state:
+    try:
+        sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
+        existing = [r[3] for r in sheet.get_all_values()[1:]]
+        new_id = genera_id_univoco()
+        while new_id in existing:
+            new_id = genera_id_univoco()
+        st.session_state["id_partecipante"] = new_id
+    except Exception as e:
+        st.error("❌ Errore nella generazione dell'ID partecipante.")
+        st.text(f"Dettaglio: {e}")
+        st.stop()
 
-# ─── Header ──────────────────────────────────────────────────────────
-st.markdown(f"# {PAGE_TITLE}")
-st.write(PAGE_DESCRIPTION)
+# ─── Titolo e informazioni ─────────────────────────────────────────────────
+st.markdown('<div class="header">🏠 Pagina di Registrazione</div>', unsafe_allow_html=True)
+st.markdown(f"### ID: `{st.session_state['id_partecipante']}` | Quartiere: **{quartiere}**")
 st.markdown("---")
 
-# ─── Gestione Login ────────────────────────────────────────────────────
-if not st.session_state.logged_in:
-    st.markdown("## 🔐 Accesso Quartieri")
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        selected_quartiere = st.selectbox("Seleziona Quartiere", QUARTIERI)
-        password = st.text_input("Password Quartiere o ADMIN", type="password")
-        submit = st.form_submit_button("Accedi")
+# ─── Prepara opzioni tavola in modalità Streamlit Secrets ────────────────
+if secret_method == "Streamlit Secrets":
+    try:
+        sheet_attive = get_sheet_by_name("Dati_Partecipante", "Tavola Rotonda Attiva")
+        df_attive = pd.DataFrame(sheet_attive.get_all_records())
+        opzioni = df_attive["Tavola Rotonda Attiva"].dropna().unique().tolist()
+        if not opzioni:
+            opzioni = ["(nessuna disponibile)"]
+    except Exception:
+        opzioni = ["(errore connessione)"]
 
-    if submit:
-        valid_login = False
-        for role, creds in [("ADMIN", ("ADMIN_USER", "ADMIN_PASS")),
-                            ("amministrazione", ("AMMIN_USER", "AMMIN_PASS"))]:
-            if username == get_secret(creds[0]) and password == get_secret(creds[1]):
-                st.session_state.update({"logged_in": True, "role": role, "quartiere": None})
-                st.rerun()
+# ─── Carica domande dinamiche (solo SQL) ────────────────────────────────────
+questions = []
+if secret_method != "Streamlit Secrets":
+    ensure_questions_table()
+    questions = fetch_questions_for_quartiere(quartiere)
 
-        if not valid_login:
-            safe_quartiere = unicodedata.normalize('NFD', selected_quartiere)
-            safe_quartiere = safe_quartiere.encode('ascii', 'ignore').decode().upper().replace(' ', '_')
-            quartiere_key = f"PW_{safe_quartiere}"
-            if password and password == get_secret(quartiere_key):
-                st.session_state.update({
-                    "logged_in": True,
-                    "role": "utente",
-                    "quartiere": selected_quartiere
-                })
-                st.rerun()
+# ─── FORM DATI UTENTE ───────────────────────────────────────────────────────
+with st.form("user_info_form"):
+    answers = {}
+
+    if secret_method == "Streamlit Secrets":
+        # campi statici
+        answers["Tavola rotonda"] = st.selectbox("🔘 Tavola rotonda", opzioni, key="tavola_static")
+        answers["Età"]            = st.number_input("🎂 Età", min_value=16, max_value=100, step=1, key="eta_static")
+        answers["Professione"]    = st.text_input("💼 Professione", key="prof_static")
+        answers["Ruolo"]          = st.selectbox(
+            "🎭 Ruolo",
+            ["Cittadino", "Tecnico comunale", "Rappresentante associazione", "Educatore ambientale"],
+            key="ruolo_static"
+        )
+        answers["Motivazione"]    = st.text_area("🗣️ Motivazione", placeholder="Perché partecipi?", key="motivazione_static")
+        answers["Obiettivo"]      = st.text_area("🎯 Obiettivo", placeholder="Cosa vuoi ottenere?", key="obiettivo_static")
+        valori = st.multiselect(
+            "❤️ Valori",
+            ["Innovazione", "Collaborazione", "Responsabilità", "Inclusione", "Sostenibilità"],
+            key="valori_static"
+        )
+        answers["Valori"] = ", ".join(valori)
+
+    else:
+        # campi dinamici da SQL
+        for idx, q in enumerate(questions):
+            key = f"q_{idx}"
+            if q["type"] == "select":
+                answers[q["question"]] = st.selectbox(q["question"], q["values"], key=key)
+            elif q["type"] == "radio":
+                answers[q["question"]] = st.radio(q["question"], q["values"], key=key)
+            elif q["type"] == "multiselect":
+                answers[q["question"]] = st.multiselect(q["question"], q["values"], key=key)
+            elif q["type"] == "slider":
+                vals = [int(v) for v in q["values"] if v.isdigit()]
+                if vals:
+                    answers[q["question"]] = st.slider(
+                        q["question"], min(vals), max(vals), (min(vals) + max(vals)) // 2, key=key
+                    )
             else:
-                st.error("❌ Credenziali non valide")
-else:
-    # ─── Navigazione con pulsanti ────────────────────────────
-    st.markdown("## 📌 Naviga nelle sezioni")
-    for page in PAGES_ACCESS.get(st.session_state.role, []):
-        page_file = f"pages/{page}.py"
-        if st.button(page, key=f"page_{page}"):
-            st.switch_page(page_file)
+                answers[q["question"]] = st.text_input(q["question"], key=key)
 
-    if st.button("Logout"):
-        st.session_state.clear()
-        st.rerun()
+    submitted = st.form_submit_button("Invia")
 
-# ─── Informazioni aggiuntive (Autori + Credits) ───────────────────────────
-st.markdown("---")
-st.markdown("## Autori e Credits")
-authors = [
-    {"name": "Alice Rossi", "image": "ASSETT/alice.png", "desc": "Data Scientist e UX Designer"},
-    {"name": "Bruno Bianchi", "image": "ASSETT/bruno.png", "desc": "Esperto di Cloud e DevOps"},
-    {"name": "Chiara Verdi", "image": "ASSETT/chiara.png", "desc": "Full Stack Developer e PM"},
-]
+# ─── Salvataggio dati ───────────────────────────────────────────────────────
+if submitted:
+    if not answers:
+        st.error("⚠️ Nessuna risposta inserita.")
+    else:
+        # Prepara record base
+        dati = {
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "id": st.session_state["id_partecipante"],
+            "quartiere": quartiere
+        }
+        # Unisci risposte
+        for k, v in answers.items():
+            dati[k] = v
 
-for author in authors:
-    col1, col2 = st.columns([1, 3], gap="medium")
-    with col1:
-        st.image(author["image"], width=100) if os.path.exists(author["image"]) else st.write("[Immagine non disponibile]")
-    with col2:
-        st.markdown(f"**{author['name']}**  \n{author['desc']}")
+        try:
+            if secret_method == "Streamlit Secrets":
+                # salva su Google Sheet
+                sheet = get_sheet_by_name("Dati_Partecipante", "Partecipanti")
+                sheet.append_row(list(dati.values()))
+                st.success("✅ Dati salvati su Google Sheet!")
+            else:
+                # salva su Cloud SQL in formato long
+                db_url = get_secret("SQL_CONNECTION_URL")
+                engine = sqlalchemy.create_engine(db_url)
+
+                create_sql = text("""
+                    CREATE TABLE IF NOT EXISTS Risposte (
+                        timestamp  VARCHAR(20),
+                        id         VARCHAR(50),
+                        quartiere  VARCHAR(100),
+                        question   TEXT,
+                        response   TEXT
+                    )
+                """)
+                insert_sql = text("""
+                    INSERT INTO Risposte (timestamp, id, quartiere, question, response)
+                    VALUES (:timestamp, :id, :quartiere, :question, :response)
+                """)
+
+                ts = dati["timestamp"]
+                with engine.begin() as conn:
+                    conn.execute(create_sql)
+                    for question, response in answers.items():
+                        resp = ", ".join(map(str, response)) if isinstance(response, list) else str(response)
+                        conn.execute(insert_sql, {
+                            "timestamp": ts,
+                            "id": dati["id"],
+                            "quartiere": quartiere,
+                            "question": question,
+                            "response": resp
+                        })
+                st.success("✅ Risposte salvate su Cloud SQL!")
+            # vai avanti
+            st.query_params = {"page": "2_Persona_Model"}
+            st.rerun()
+
+        except Exception as e:
+            st.error("❌ Errore salvataggio dati.")
+            st.text(f"Dettaglio: {e}")
+
+# ─── Sidebar di navigazione ─────────────────────────────────────────────────
+render_sidebar_navigation()
