@@ -54,14 +54,40 @@ opacity = st.sidebar.slider("Opacità Piste Ciclabili", min_value=0.1, max_value
 # Inizializza mappa senza basemap
 m = folium.Map(location=CENTER, zoom_start=ZOOM, tiles=None)
 
-# 1. Aggiungi basemap ESA
-folium.TileLayer(
-    tiles=ESA_TILE_URL,
-    name="ESA Satellite (Sentinel-2 Cloudless)",
-    attr="EOX Sentinel-2 Cloudless",
-    opacity=1.0,
-    max_zoom=20
-).add_to(m)
+# 1. Aggiungi basemap ESA in base alla scelta
+bm = basemap_options[esa_choice]
+if bm['type'] == 'xyz':
+    folium.TileLayer(
+        tiles=bm['url'],
+        name=esa_choice,
+        attr=bm['attr'],
+        opacity=1.0,
+        max_zoom=20
+    ).add_to(m)
+elif bm['type'] == 'wmts':
+    folium.raster_layers.WmsTileLayer(
+        url=bm['url'],
+        name=esa_choice,
+        layers=bm['layers'],
+        fmt='image/png',
+        transparent=False,
+        opacity=1.0,
+        tile_size=256,
+        attr=bm['attr'],
+        version='1.0.0'
+    ).add_to(m)
+else:
+    folium.raster_layers.WmsTileLayer(
+        url=bm['url'],
+        name=esa_choice,
+        layers=bm['layers'],
+        fmt=bm.get('fmt','image/png'),
+        transparent=False,
+        opacity=1.0,
+        version='1.3.0',
+        crs='EPSG:4326',
+        attr=bm['attr']
+    ).add_to(m)
 
 # 2. Overlay WMS Piste Ciclabili
 if show_ciclabili:
@@ -84,5 +110,3 @@ m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
 # 4. Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
-
-
