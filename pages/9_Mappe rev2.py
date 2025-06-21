@@ -3,6 +3,7 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
+from folium.plugins import WmtsTileLayer
 
 # ─── Configurazione pagina ──────────────────────────────────────────────────
 st.set_page_config(page_title="Piste Ciclabili su ESA", layout="wide")
@@ -33,13 +34,13 @@ opacity = st.sidebar.slider("Opacità piste ciclabili", 0.1, 1.0, 0.8)
 m = folium.Map(location=CENTER, zoom_start=ZOOM, tiles=None)
 
 # Aggiungi basemap ESA WMTS
-folium.raster_layers.WmtsTileLayer(
+WmtsTileLayer(
     url=ESA_WMTS_URL,
-    name="ESA WorldCover",
-    tilematrixset="EPSG:4326",
-    fmt="image/png",
+    name=\"ESA WorldCover\",
+    tilematrixset=\"EPSG:4326\",
+    fmt=\"image/png\",
     layers=ESA_WMTS_LAYER,
-    attr="ESA WorldCover",
+    attr=\"ESA WorldCover\",
     transparent=False,
     opacity=1.0,
     tile_size=256
@@ -61,3 +62,4 @@ folium.raster_layers.WmsTileLayer(
 # Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
+
