@@ -3,7 +3,6 @@
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
-from folium.plugins import WmtsTileLayer
 
 # ─── Configurazione pagina ──────────────────────────────────────────────────
 st.set_page_config(page_title="Piste Ciclabili su ESA", layout="wide")
