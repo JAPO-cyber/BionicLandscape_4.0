@@ -47,22 +47,6 @@ if "id_partecipante" not in st.session_state:
         st.text(f"Dettaglio: {e}")
         st.stop()
 
-# ─── Titolo e informazioni ─────────────────────────────────────────────────
-st.markdown('<div class="header">🏠 Pagina di Registrazione</div>', unsafe_allow_html=True)
-st.markdown(f"### ID: `{st.session_state['id_partecipante']}` | Quartiere: **{quartiere}**")
-st.markdown("---")
-
-# ─── Prepara opzioni tavola in modalità Streamlit Secrets ────────────────
-if secret_method == "Streamlit Secrets":
-    try:
-        sheet_attive = get_sheet_by_name("Dati_Partecipante", "Tavola Rotonda Attiva")
-        df_attive = pd.DataFrame(sheet_attive.get_all_records())
-        opzioni = df_attive["Tavola Rotonda Attiva"].dropna().unique().tolist()
-        if not opzioni:
-            opzioni = ["(nessuna disponibile)"]
-    except Exception:
-        opzioni = ["(errore connessione)"]
-
 # ─── Carica domande dinamiche (solo SQL) ────────────────────────────────────
 questions = []
 if secret_method != "Streamlit Secrets":
