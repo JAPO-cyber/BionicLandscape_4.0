@@ -56,7 +56,7 @@ cfg = basemap_options[esa_choice]
 # 1. Aggiungi basemap ESA
 if cfg['type'] == 'provider':
     folium.TileLayer(
-        tiles=cfg['tiles'],
+        tiles=cfg['tiles'],       # qui uso 'tiles' e non 'url'
         name=esa_choice,
         attr=cfg['attr'],
         opacity=1.0,
@@ -116,6 +116,5 @@ m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
 # 4. Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
-
 
 
