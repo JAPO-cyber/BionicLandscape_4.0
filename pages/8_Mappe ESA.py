@@ -36,20 +36,34 @@ basemap_options = {
     }
 }
 
+CICLABILI_WMS_URL = (
+    "https://territorio.comune.bergamo.it/arcgis/services/"
+    "AtlanteBG/Ciclabili/MapServer/WMSServer?"
+)
+CICLABILI_LAYER = "1"
+
 # ─── Sidebar ────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.header("Opzioni Visualizzazione")
     esa_choice = st.selectbox("Basemap ESA:", list(basemap_options.keys()), index=0)
     show_ciclabili = st.checkbox("Mostra Piste Ciclabili", value=True)
-    opacity = st.slider("Opacità Piste Ciclabili", 0.1, 1.0, 0.8)
+    opacity = st.slider("Opacità Piste Ciclabili", min_value=0.1, max_value=1.0, value=0.8)
 
 # ─── Creazione mappa Folium ─────────────────────────────────────────────────
-# Inizializza mappa senza basemap
 m = folium.Map(location=CENTER, zoom_start=ZOOM, tiles=None)
+cfg = basemap_options[esa_choice]
 
 # 1. Aggiungi basemap ESA
-cfg = basemap_options[esa_choice]
-if cfg['type'] == 'xyz':
+if cfg['type'] == 'provider':
+    folium.TileLayer(
+        tiles=cfg['tiles'],
+        name=esa_choice,
+        attr=cfg['attr'],
+        opacity=1.0,
+        max_zoom=20
+    ).add_to(m)
+
+elif cfg['type'] == 'xyz':
     folium.TileLayer(
         tiles=cfg['url'],
         name=esa_choice,
@@ -57,6 +71,7 @@ if cfg['type'] == 'xyz':
         opacity=1.0,
         max_zoom=20
     ).add_to(m)
+
 elif cfg['type'] == 'wmts':
     folium.raster_layers.WmtsTileLayer(
         url=cfg['url'],
@@ -64,8 +79,10 @@ elif cfg['type'] == 'wmts':
         layers=cfg['layers'],
         fmt='image/png',
         tile_size=256,
-        attr=cfg['attr']
+        attr=cfg['attr'],
+        version='1.0.0'
     ).add_to(m)
+
 else:  # wms
     folium.raster_layers.WmsTileLayer(
         url=cfg['url'],
@@ -80,11 +97,6 @@ else:  # wms
     ).add_to(m)
 
 # 2. Overlay WMS Piste Ciclabili
-CICLABILI_WMS_URL = (
-    "https://territorio.comune.bergamo.it/arcgis/services/"
-    "AtlanteBG/Ciclabili/MapServer/WMSServer?"
-)
-CICLABILI_LAYER = "1"
 if show_ciclabili:
     folium.raster_layers.WmsTileLayer(
         url=CICLABILI_WMS_URL,
@@ -104,5 +116,6 @@ m.fit_bounds([[45.655085, 9.618587], [45.731830, 9.714212]])
 # 4. Controllo layer e render
 folium.LayerControl(position='topright').add_to(m)
 st_folium(m, width=900, height=600)
+
 
 
